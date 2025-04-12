@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { Request, response, Response } from "express";
+import { Request, Response } from "express";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { streamUpload } from "../config/streamifier";

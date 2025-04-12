@@ -1,44 +1,27 @@
-import express, { Response } from "express";
-import passport from "../controllers/googleController";
-import jwt from "jsonwebtoken";
+import express from "express";
+import passport from "passport";
+
 
 const router = express.Router();
 
-// 🔹 Start Google Authentication
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
-// 🔹 Google Callback Route
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  async (req: any, res: Response) => {
-    if (!req.user) {
-      return res.redirect("/login");
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: req.user.id, email: req.user.email },
-      process.env.JWT! || "default_secret",
-      { expiresIn: "1d" }
-    );
-
-    // Set token as a cookie
-    res.cookie("jwt", token, { httpOnly: true, secure: process.env.NODE_ENV === "production" });
-
-    // Redirect to frontend with token
-    res.redirect(`http://localhost:3000/auth/authenticate?token=${token}`);
+  passport.authenticate("google", { failureRedirect: "/login", session: true }),
+  (req, res) => {
+    res.redirect("/profile");
   }
 );
 
-// 🔹 Logout Route
-router.get("/logout", (req: any, res: Response) => {
-  req.logout((err: any) => {
-    if (err) return res.status(500).json({ message: "Logout failed" });
-
-    res.clearCookie("jwt"); // Clear the JWT cookie
-    res.status(200).json({ message: "Logged out successfully" });
+router.get("/logout", (req, res) => {
+  req.logOut(() => {
+    res.redirect("/");
   });
 });
 
-export default router;
+
+export default router

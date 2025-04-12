@@ -14,13 +14,17 @@ CREATE TYPE "Status" AS ENUM ('PENDING', 'CONFIRMED', 'PAID', 'CANCELED', 'REFUN
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "firstName" TEXT,
+    "lastName" TEXT,
+    "googleId" TEXT,
+    "avatarUrl" TEXT,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
     "verficationCode" TEXT,
     "verificationCodeExpiresIn" TEXT,
     "recoveryCode" TEXT,
-    "recoveryCOdeExpiresIn" TEXT,
-    "lastName" TEXT,
+    "refreshToken" TEXT,
+    "recoveryCodeExpiresIn" TEXT,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -34,11 +38,12 @@ CREATE TABLE "Booking" (
     "userId" TEXT NOT NULL,
     "referenceId" TEXT NOT NULL,
     "type" "BookingType" NOT NULL,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
     "status" "Status" NOT NULL DEFAULT 'PENDING',
     "apiResponse" JSONB NOT NULL,
     "bookingDetails" JSONB NOT NULL,
-    "totalAmount" DOUBLE PRECISION NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'USD',
+    "totalAmount" DOUBLE PRECISION,
+    "currency" TEXT DEFAULT 'USD',
     "apiProvider" TEXT NOT NULL DEFAULT 'AMADEUS',
     "apiReferenceId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -61,8 +66,34 @@ CREATE TABLE "Review" (
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Traveler" (
+    "id" TEXT NOT NULL,
+    "bookingId" TEXT,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "dateOfBirth" TIMESTAMP(3) NOT NULL,
+    "gender" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "countryCode" TEXT NOT NULL,
+    "birthPlace" TEXT,
+    "passportNumber" TEXT,
+    "passportExpiry" TIMESTAMP(3),
+    "issuanceCountry" TEXT,
+    "validityCountry" TEXT,
+    "nationality" TEXT,
+    "issuanceDate" TIMESTAMP(3),
+    "issuanceLocation" TEXT,
+
+    CONSTRAINT "Traveler_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Booking_referenceId_key" ON "Booking"("referenceId");
@@ -78,3 +109,6 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_bookingId_fkey" FOREIGN KEY ("bookin
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Traveler" ADD CONSTRAINT "Traveler_bookingId_fkey" FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE SET NULL ON UPDATE CASCADE;
