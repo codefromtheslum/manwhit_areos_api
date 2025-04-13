@@ -1,0 +1,413 @@
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { streamUpload } from "../config/streamifier";
+
+const prisma = new PrismaClient();
+
+// Registering user account using credentia ls
+export const registerAccount = async (req: Request, res: Response): Promise<any> => {
+
+    const generateVerificationCode = (): string => {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+    try {
+        const { email, password } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { email: email }
+        })
+
+        if (user) {
+            return res.status(400).json({
+                message: "Account with email already exists "
+            })
+        }
+
+        const hashedPassword = await bcryptjs.hash(password, 10)
+        const verificationCodeExpiresIn = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // Expires in 10 minutes
+        const newUser = await prisma.user.create({
+            data: {
+                email: email,
+                verficationCode: generateVerificationCode(),
+                verificationCodeExpiresIn,
+                password: hashedPassword,
+                verified: false
+            }
+        })
+
+        const { password: _, ...hidePassword } = newUser;
+
+        return res.status(201).json({
+            message: "Account registered successfully",
+            data: hidePassword
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error registering account",
+            data: error?.message
+        })
+    }
+}
+
+// Verify account 
+export const verifyAccount = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userId } = req.params;
+        const { verificationCode } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account not found"
+            })
+        }
+
+        if (user.verificationCodeExpiresIn && new Date(user.verificationCodeExpiresIn) < new Date()) {
+            return res.status(400).json({
+                message: "Verification code expired"
+            })
+
+        }
+
+        if (!user || user.verficationCode !== verificationCode) {
+            return res.status(400).json({ message: "Invalid verification code" });
+        }
+
+        if (user?.verficationCode === verificationCode) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    verified: true,
+                    verficationCode: null,
+                    verificationCodeExpiresIn: null
+                }
+            })
+        }
+
+        return res.status(200).json({
+            message: "Account verification successful"
+        })
+
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error verifying account",
+            data: error?.message
+        })
+    }
+}
+
+// Login user using credentials
+export const loginAccount = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { email }
+        })
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account does not exist"
+            })
+        }
+
+        if (!user?.verified) {
+            return res.status(400).json({
+                message: "Account not verified"
+            })
+        }
+
+        const isPasswordValid = await bcryptjs.compare(password, user?.password || "")
+        if (!isPasswordValid) {
+            return res.status(400).json({
+                message: "Invalid password"
+            })
+        }
+
+
+        const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, process.env.JWT!, {
+            expiresIn: "3h"
+        })
+
+        return res.status(200).json({
+            message: "Sign-in successful",
+            data: {
+                token
+            },
+            // data: {
+            //     id: user.id,
+            //     email: user.email,
+            //     role: user.role,
+            //     firstName: user.firstName,
+            //     lastName: user.lastName,
+            //     avatarUrl: user.avatarUrl
+            // }
+        })
+    } catch (error: any) {
+        return res.status(400).json({
+            message: "Error occured during login",
+            data: error?.message
+        })
+    }
+}
+
+// See one-account details
+export const getAccountDetails = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userId } = req.params;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                avatarUrl: true,
+                bookings: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                reviews: true,
+                verified: true,
+                role: true,
+                id: true,
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account does not exist"
+            })
+        }
+
+        return res.status(200).json({
+            message: "Details retrieval successful",
+            data: user
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error getting account details",
+            data: error?.message
+        })
+    }
+}
+
+// Gettting all account details
+export const getAllAccountDetails = async (req: Request, res: Response): Promise<any> => {
+    try {
+
+        const users = await prisma.user.findMany({})
+
+        return res.status(200).json({
+            message: "Account details gotten successfully",
+            data: users
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error getting user's details",
+            data: error?.message
+        })
+    }
+}
+
+// updateAccount
+export const updateAccount = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userId } = req.params;
+        const { firstName, lastName } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account not found"
+            })
+        }
+
+        let secure_url = null;
+        if (req.file) {
+            const uploadResult = await streamUpload(req);
+
+            if (uploadResult) {
+                secure_url = uploadResult.secure_url
+            }
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                firstName,
+                lastName,
+                avatarUrl: secure_url
+            }
+        })
+
+        const { password: _, ...hidePassword } = user;
+
+        return res.status(200).json({
+            message: "Account update successful",
+            data: hidePassword
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error updating account",
+            data: error?.message
+        })
+    }
+}
+
+// Request reset password
+export const requestResetPassword = async (req: Request, res: Response): Promise<any> => {
+    const generateRecoveryCode = (): string => {
+        return Math.floor(100000 + Math.random() * 900000).toString(); // Ensure 6-digit code
+    };
+
+    try {
+        const { email } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ message: "Account not found" });
+        }
+
+        const recoveryCode = generateRecoveryCode();
+        const recoveryCodeExpiresIn = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+        // Update user with recovery code
+        const updatedUser = await prisma.user.update({
+            where: { email },
+            data: { recoveryCode, recoveryCodeExpiresIn },
+            select: {
+                id: true,
+                email: true,
+                recoveryCode: true, // Ensure this is returned for debugging
+            }
+        });
+
+        return res.status(200).json({
+            message: "Recovery code sent 🚀🚀🚀",
+            data: updatedUser // Now includes the correct recoveryCode
+        });
+
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error requesting password reset",
+            data: error?.message
+        });
+    }
+};
+
+// Set new password after successful reset
+export const setPassword = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userId } = req.params;
+        const { recoveryCode, newPassword } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account not found"
+            })
+        }
+
+        if (user.recoveryCode !== recoveryCode) {
+            return res.status(400).json({
+                message: "Incorrect recoverycode"
+            })
+        }
+
+        if (!user.recoveryCodeExpiresIn || new Date(user.recoveryCodeExpiresIn) < new Date()) {
+            return res.status(400).json({
+                message: "Recovery code expired"
+            })
+        }
+
+        const hashPassword = await bcryptjs.hash(newPassword, 10)
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                password: hashPassword,
+                recoveryCode: null,
+                recoveryCodeExpiresIn: null
+            }
+        })
+
+        return res.status(200).json({
+            message: "Password reset successful",
+            data: user
+        })
+
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error setting new password",
+            data: error?.message
+        })
+    }
+}
+
+// Delete by Admin and also users
+export const deleteAccount = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { userId } = req.params;
+        const { password, adminId } = req.body; // Admin ID is provided for admin-based deletion
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Account not found"
+            });
+        }
+
+        if (adminId) {
+            const admin = await prisma.user.findUnique({ where: { id: adminId } });
+
+            if (!admin || admin.role !== "ADMIN") {
+                return res.status(403).json({
+                    message: "Unauthorized: Only an admin can perform this action"
+                });
+            }
+
+            await prisma.user.delete({ where: { id: userId } });
+            return res.status(200).json({
+                message: "Account deleted successfully by admin"
+            });
+        }
+
+        // If a user is trying to delete their own account, require a password
+        if (!password) {
+            return res.status(400).json({
+                message: "Password is required to delete your account"
+            });
+        }
+
+        // Check if the user has a password (for social logins without passwords)
+        if (!user.password) {
+            return res.status(400).json({
+                message: "Password authentication is not available for this account"
+            });
+        }
+
+        const isMatch = await bcryptjs.compare(password, user.password || "");
+        if (!isMatch) {
+            return res.status(400).json({
+                message: "Incorrect password"
+            });
+        }
+
+        await prisma.user.delete({ where: { id: userId } });
+
+        return res.status(200).json({
+            message: "Account deleted successfully"
+        });
+
+    } catch (error: any) {
+        return res.status(500).json({
+            message: "Error deleting account",
+            data: error?.message
+        });
+    }
+};
