@@ -1,7 +1,11 @@
 import bcryptjs from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { sendResetPassword, sendVerification } from "../config/emailServices";
+import {
+  sendLoginEmail,
+  sendResetPassword,
+  sendVerification,
+} from "../config/emailServices";
 
 const prisma = new PrismaClient();
 
@@ -109,6 +113,8 @@ export const loginAccount = async (
       });
     }
 
+    // await sendLoginEmail(user)
+
     return res.status(200).json({
       message: `Almost there...`,
       data: user,
@@ -144,6 +150,7 @@ export const checkPassword = async (
       if (check) {
         return res.status(200).json({
           message: `Logged in successfully`,
+          data: user,
         });
       } else {
         return res.status(400).json({
@@ -219,12 +226,36 @@ export const createNewPassword = async (
       message: `Password updated successfully`,
       data: hidePassword,
     });
-
-    
   } catch (error: any) {
     return res.status(500).json({
       message: `Error occured while creating new password`,
       data: error?.message,
     });
+  }
+};
+
+export const getSingleUserAccount = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return res.status(400).json({
+        message: `Account does not exist`,
+      });
+    }
+
+    const { password: _, ...hidePassword } = user;
+
+    return res.status(200).json({
+      message: `Details gotten successfully`,
+      data: hidePassword,
+    });
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message);
   }
 };
