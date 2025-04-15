@@ -259,3 +259,60 @@ export const getSingleUserAccount = async (
     throw new Error(error?.response?.data?.message);
   }
 };
+
+export const updateuserAccountDetails = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { id } = req.params;
+    const {
+      firstName,
+      nationality,
+      lastName,
+      dob,
+      passportNo,
+      passportExpiry,
+      gender,
+      phone,
+    } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return res.status(404).json({
+        message: `Account does not exist`,
+      });
+    }
+
+    if (user) {
+      const newUser = await prisma.user.update({
+        where: { id },
+        data: {
+          firstName,
+          nationality,
+          lastName,
+          dob,
+          passportNo,
+          passportExpiry,
+          gender,
+          phone,
+        },
+      });
+
+      const { password: _, ...hidePassword } = newUser;
+
+      return res.status(200).json({
+        message: `Account updated successfully`,
+        data: hidePassword,
+      });
+    }
+
+    
+  } catch (error: any) {
+    return res.status(500).json({
+      message: `Error occured while updating account`,
+      data: error?.message,
+    });
+  }
+};

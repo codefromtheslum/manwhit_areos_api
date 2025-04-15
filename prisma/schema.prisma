@@ -22,6 +22,12 @@ model User {
   recoveryCode              String?
   refreshToken              String?
   recoveryCodeExpiresIn     String?
+  phone                     String?
+  gender                    String?
+  dob                       String?
+  nationality               String?
+  passportNo                String?
+  passportExpiry            String?
   role                      Role      @default(USER)
   bookings                  Booking[]
   reviews                   Review[]
