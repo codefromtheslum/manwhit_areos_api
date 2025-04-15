@@ -15,7 +15,7 @@ export const mainApp = (app: Application) => {
   app.use(json());
   app.use(
     cors({
-      origin: "*",
+      origin: "http://localhost:5173",
       methods: ["GET", "POST", "DELETE", "PATCH"],
       credentials: true,
     })

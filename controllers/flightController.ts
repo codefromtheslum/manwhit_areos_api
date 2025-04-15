@@ -24,9 +24,7 @@ export const searchFlights = async (
       !originLocationCode ||
       !destinationLocationCode ||
       !departureDate ||
-      !returnDate ||
-      !adults ||
-      !nonStop
+      !adults
     ) {
       return res
         .status(400)
@@ -34,6 +32,7 @@ export const searchFlights = async (
     }
 
     const token = await getAmadeusToken();
+
     const response = await axios.get(`${baseURL}/v2/shopping/flight-offers`, {
       headers: { Authorization: `Bearer ${token}` },
       params: {

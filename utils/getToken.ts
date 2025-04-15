@@ -22,7 +22,6 @@ const getAmadeusToken = async () => {
         );
 
 
-        console.log(`For debugging reasons: `,response.data)
         return response.data.access_token;
         
     } catch (error: any) {
