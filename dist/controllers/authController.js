@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
+exports.updateuserAccountDetails = exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const client_1 = require("@prisma/client");
 const emailServices_1 = require("../config/emailServices");
@@ -232,3 +232,42 @@ const getSingleUserAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getSingleUserAccount = getSingleUserAccount;
+const updateuserAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const { firstName, nationality, lastName, dob, passportNo, passportExpiry, gender, phone, } = req.body;
+        const user = yield prisma.user.findUnique({ where: { id } });
+        if (!user) {
+            return res.status(404).json({
+                message: `Account does not exist`,
+            });
+        }
+        if (user) {
+            const newUser = yield prisma.user.update({
+                where: { id },
+                data: {
+                    firstName,
+                    nationality,
+                    lastName,
+                    dob,
+                    passportNo,
+                    passportExpiry,
+                    gender,
+                    phone,
+                },
+            });
+            const { password: _ } = newUser, hidePassword = __rest(newUser, ["password"]);
+            return res.status(200).json({
+                message: `Account updated successfully`,
+                data: hidePassword,
+            });
+        }
+    }
+    catch (error) {
+        return res.status(500).json({
+            message: `Error occured while updating account`,
+            data: error === null || error === void 0 ? void 0 : error.message,
+        });
+    }
+});
+exports.updateuserAccountDetails = updateuserAccountDetails;
