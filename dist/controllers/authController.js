@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateuserAccountDetails = exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
+exports.updateuserAccountDetails = exports.getAllAccounts = exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const client_1 = require("@prisma/client");
 const emailServices_1 = require("../config/emailServices");
@@ -232,6 +232,22 @@ const getSingleUserAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getSingleUserAccount = getSingleUserAccount;
+const getAllAccounts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield prisma.user.findMany();
+        return res.status(200).json({
+            message: `${users === null || users === void 0 ? void 0 : users.length} Accounts(s) gotten successfully`,
+            data: users,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            message: `Error occured while getting all accounts`,
+            data: error === null || error === void 0 ? void 0 : error.message,
+        });
+    }
+});
+exports.getAllAccounts = getAllAccounts;
 const updateuserAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;

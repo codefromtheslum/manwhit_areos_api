@@ -16,10 +16,12 @@ router.route("/login").post(authController_1.loginAccount);
 router.route("/:email/validate-pass").post(authController_1.checkPassword);
 // Reseting the password
 router.route("/reset-password").post(authController_1.resetPassword);
-// Creating new password 
+// Creating new password
 router.route("/:id/complete").patch(authController_1.createNewPassword);
 // Getting users's details
 router.route("/:id/get-details").get(authController_1.getSingleUserAccount);
+// Getting all account details
+router.route("/users").get(authController_1.getAllAccounts);
 //Updating user's details
 router.route("/:id/update-details").patch(authController_1.updateuserAccountDetails);
 exports.default = router;
