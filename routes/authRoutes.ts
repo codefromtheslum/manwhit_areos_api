@@ -4,6 +4,7 @@ import {
   createAccount,
   createNewPassword,
   createPassword,
+  getAllAccounts,
   getSingleUserAccount,
   loginAccount,
   resetPassword,
@@ -26,11 +27,14 @@ router.route("/:email/validate-pass").post(checkPassword);
 // Reseting the password
 router.route("/reset-password").post(resetPassword);
 
-// Creating new password 
+// Creating new password
 router.route("/:id/complete").patch(createNewPassword);
 
 // Getting users's details
 router.route("/:id/get-details").get(getSingleUserAccount);
+
+// Getting all account details
+router.route("/users").get(getAllAccounts);
 
 //Updating user's details
 router.route("/:id/update-details").patch(updateuserAccountDetails);

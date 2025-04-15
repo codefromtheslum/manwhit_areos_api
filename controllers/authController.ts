@@ -260,6 +260,25 @@ export const getSingleUserAccount = async (
   }
 };
 
+export const getAllAccounts = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const users = await prisma.user.findMany();
+
+    return res.status(200).json({
+      message: `${users?.length} Accounts(s) gotten successfully`,
+      data: users,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      message: `Error occured while getting all accounts`,
+      data: error?.message,
+    });
+  }
+};
+
 export const updateuserAccountDetails = async (
   req: Request,
   res: Response
@@ -307,8 +326,6 @@ export const updateuserAccountDetails = async (
         data: hidePassword,
       });
     }
-
-    
   } catch (error: any) {
     return res.status(500).json({
       message: `Error occured while updating account`,
