@@ -1,11 +1,7 @@
 import bcryptjs from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import {
-  sendLoginEmail,
-  sendResetPassword,
-  sendVerification,
-} from "../config/emailServices";
+import { sendResetPassword, sendVerification } from "../config/emailServices";
 
 const prisma = new PrismaClient();
 
