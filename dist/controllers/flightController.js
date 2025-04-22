@@ -24,9 +24,7 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (!originLocationCode ||
             !destinationLocationCode ||
             !departureDate ||
-            !returnDate ||
-            !adults ||
-            !nonStop) {
+            !adults) {
             return res
                 .status(400)
                 .json({ message: "Missing required query parameters" });

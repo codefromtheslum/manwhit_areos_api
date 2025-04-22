@@ -7,12 +7,26 @@ const express_1 = __importDefault(require("express"));
 const passport_1 = __importDefault(require("passport"));
 const router = express_1.default.Router();
 router.get("/google", passport_1.default.authenticate("google", { scope: ["profile", "email"] }));
-router.get("/google/callback", passport_1.default.authenticate("google", { failureRedirect: "/login", session: true }), (req, res) => {
-    res.redirect("/profile");
+router.get("/google/callback", passport_1.default.authenticate("google", {
+    failureRedirect: "https://manwhitareos.web.app/auth",
+    // failureRedirect: "http://localhost:5173/auth",
+    session: true,
+}), (req, res) => {
+    res.redirect("https://manwhitareos.web.app/home");
+    // res.redirect("http://localhost:5173/home");
+});
+router.get("/current-user", (req, res) => {
+    if (req.isAuthenticated()) {
+        return res.status(200).json(req.user); // You can send more details if needed
+    }
+    else {
+        return res.status(401).json({ message: "Not authenticated" });
+    }
 });
 router.get("/logout", (req, res) => {
     req.logOut(() => {
-        res.redirect("/");
+        // res.redirect("http://localhost:5173/auth");
+        res.redirect("https://manwhitareos.web.app/auth");
     });
 });
 exports.default = router;

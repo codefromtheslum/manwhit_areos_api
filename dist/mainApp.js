@@ -19,7 +19,8 @@ dotenv_1.default.config();
 const mainApp = (app) => {
     app.use((0, express_1.json)());
     app.use((0, cors_1.default)({
-        origin: "*",
+        origin: "https://manwhitareos.web.app",
+        // origin: "http://localhost:5173",
         methods: ["GET", "POST", "DELETE", "PATCH"],
         credentials: true,
     }));
