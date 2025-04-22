@@ -111,7 +111,7 @@ export const sendVerification = async (user: any) => {
       <!-- Button -->
       <div style="text-align: center">
         <a
-          href="https://manwhit-client.vercel.app/auth/${user.id}"
+          href="https://manwhitareos.web.app/auth/${user.id}"
           target="_blank"
           style="
             display: inline-block;
@@ -294,7 +294,7 @@ export const sendResetPassword = async (user: any) => {
           <i class="fas fa-hand-point-right" style="color: orange"></i>
           <a
             style="text-decoration: none; color: blue"
-            href="https://manwhit-client.vercel.app/auth/${user.id}/complete"
+            href="https://manwhitareos.web.app/auth/${user.id}/complete"
             target="_blank"
             >Reset Your Password</a
           >

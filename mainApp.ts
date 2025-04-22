@@ -15,7 +15,7 @@ export const mainApp = (app: Application) => {
   app.use(json());
   app.use(
     cors({
-      origin: "https://manwhit-client.vercel.app",
+      origin: "https://manwhitareos.web.app",
       // origin: "http://localhost:5173",
       methods: ["GET", "POST", "DELETE", "PATCH"],
       credentials: true,
