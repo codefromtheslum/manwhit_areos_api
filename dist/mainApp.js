@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mainApp = void 0;
 const express_1 = require("express");
-// import cors from "cors";
+const cors_1 = __importDefault(require("cors"));
 const flightRoutes_1 = __importDefault(require("./routes/flightRoutes"));
 const bookingRoutes_1 = __importDefault(require("./routes/bookingRoutes"));
 const morgan_1 = __importDefault(require("morgan"));
@@ -18,14 +18,11 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const mainApp = (app) => {
     app.use((0, express_1.json)());
-    // app.use(
-    //   cors({
-    //     // origin: "https://manwhitareos.web.app",
-    //     origin:"https://manwhitareos.web.app",
-    //     methods: ["GET", "POST", "DELETE", "PATCH"],
-    //     credentials: true,
-    //   })
-    // );
+    app.use((0, cors_1.default)({
+        origin: "*",
+        methods: ["GET", "POST", "DELETE", "PATCH"],
+        credentials: true,
+    }));
     app.get("/", (req, res) => {
         res.send(`<a href="#" target="_blank">Successfully gotten</a>`);
     });

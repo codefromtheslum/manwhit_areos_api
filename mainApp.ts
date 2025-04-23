@@ -1,5 +1,5 @@
 import { Application, json, Request, Response } from "express";
-// import cors from "cors";
+import cors from "cors";
 import flightRoutes from "./routes/flightRoutes";
 import bookingRoutes from "./routes/bookingRoutes";
 import morgan from "morgan";
@@ -11,17 +11,15 @@ import passport from "passport";
 import env from "dotenv";
 env.config();
 
-
 export const mainApp = (app: Application) => {
   app.use(json());
-  // app.use(
-  //   cors({
-  //     // origin: "https://manwhitareos.web.app",
-  //     origin:"https://manwhitareos.web.app",
-  //     methods: ["GET", "POST", "DELETE", "PATCH"],
-  //     credentials: true,
-  //   })
-  // );
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "DELETE", "PATCH"],
+      credentials: true,
+    })
+  );
 
   app.get("/", (req: Request, res: Response) => {
     res.send(`<a href="#" target="_blank">Successfully gotten</a>`);
