@@ -24,4 +24,6 @@ router.route("/:id/get-details").get(authController_1.getSingleUserAccount);
 router.route("/users").get(authController_1.getAllAccounts);
 //Updating user's details
 router.route("/:id/update-details").patch(authController_1.updateuserAccountDetails);
+//updating traveler details
+// router.route("/traveler/:travelerId").patch(updateTravelerDetails);
 exports.default = router;

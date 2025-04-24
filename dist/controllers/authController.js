@@ -287,3 +287,45 @@ const updateuserAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.updateuserAccountDetails = updateuserAccountDetails;
+// export const updateTravelerDetails = async (req: Request, res: Response): Promise<any> => {
+//   try {
+//     const { travelerId } = req.params;
+//     const { firstName, lastName, dateOfBirth, gender, email, phone, countryCode, birthPlace, passportNumber, passportExpiry, issuanceCountry, validityCountry, nationality, issuanceDate, issuanceLocation } = req.body;
+//     // Validate required fields
+//     if (!firstName || !lastName || !dateOfBirth || !gender || !email || !phone) {
+//       return res.status(400).json({ message: "Missing required traveler details" });
+//     }
+//     // Update traveler details in the database using Prisma
+//     const updatedTraveler = await prisma.traveler.update({
+//       where: {
+//         id: travelerId,
+//       },
+//       data: {
+//         firstName,
+//         lastName,
+//         dateOfBirth: new Date(dateOfBirth),
+//         gender,
+//         email,
+//         phone,
+//         countryCode,
+//         birthPlace,
+//         passportNumber,
+//         passportExpiry: passportExpiry ? new Date(passportExpiry) : null,
+//         issuanceCountry,
+//         validityCountry,
+//         nationality,
+//         issuanceDate: issuanceDate ? new Date(issuanceDate) : null,
+//         issuanceLocation,
+//       },
+//     });
+//     if (!updatedTraveler) {
+//       return res.status(404).json({ message: "Traveler not found" });
+//     }
+//     return res.status(200).json({ message: "Traveler details updated successfully", traveler: updatedTraveler });
+//   } catch (error: any) {
+//     console.error("Error updating traveler details:", error);
+//     return res.status(500).json({ message: "Error updating traveler details", error: error.message });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };

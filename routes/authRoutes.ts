@@ -8,6 +8,7 @@ import {
   getSingleUserAccount,
   loginAccount,
   resetPassword,
+  // updateTravelerDetails,
   updateuserAccountDetails,
 } from "../controllers/authController";
 
@@ -38,5 +39,9 @@ router.route("/users").get(getAllAccounts);
 
 //Updating user's details
 router.route("/:id/update-details").patch(updateuserAccountDetails);
+
+
+//updating traveler details
+// router.route("/traveler/:travelerId").patch(updateTravelerDetails);
 
 export default router;

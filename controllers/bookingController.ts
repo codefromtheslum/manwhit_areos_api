@@ -7,95 +7,124 @@ const prisma = new PrismaClient();
 
 const baseURL: string = "https://test.api.amadeus.com";
 
+export const verifyFlightPrice = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+  } catch (error: any) {
+    return res.status(500).json({
+      message: "Error verifying flight price",
+      data: error?.message,
+    });
+  }
+};
 
-export const verifyFlightPrice = async (req: Request, res: Response): Promise<any> => {
-    try {
+export const bookFlight = async (req: any, res: any): Promise<any> => {
+  try {
+    const { flightOffer, travelers } = req.body;
 
-    } catch (error: any) {
-        return res.status(500).json({
-            message: "Error verifying flight price",
-            data: error?.message
-        })
+    if (
+      !flightOffer ||
+      !travelers ||
+      !Array.isArray(travelers) ||
+      travelers.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Missing flightOffer or travelers data" });
     }
-}
 
-export const bookFlight = async (req: Request, res: Response): Promise<any> => {
+    const token = await getAmadeusToken();
 
-    const { userId, flightOffer, travelers } = req.body;
+    // Construct the booking payload
+    const payload = {
+      data: {
+        type: "flight-order",
+        flightOffers: [flightOffer],
+        travelers: travelers.map((t: any) => ({
+          id: t.id,
+          dateOfBirth: t.dateOfBirth,
+          name: {
+            firstName: t.name.firstName,
+            lastName: t.name.lastName,
+          },
+          gender: t.gender,
+          contact: {
+            emailAddress: t.contact.emailAddress,
+            phones: t.contact.phones,
+          },
+          documents: t.documents,
+        })),
+      },
+    };
 
-    if (!userId || !flightOffer || !travelers?.length) {
-        return res.status(400).json({
-            message: "Missing required fields"
-        })
+    // Make the booking request to Amadeus
+    const bookingResponse = await axios.post(
+      `${baseURL}/v1/booking/flight-orders`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const bookingData: any = bookingResponse.data;
+
+    // Save booking to database using Prisma
+    const userId = req.user?.id; // Assuming you have user authentication middleware
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User ID missing" });
     }
 
-    try {
-        const token = await getAmadeusToken()
+    const booking = await prisma.booking.create({
+      data: {
+        userId: userId,
+        referenceId: bookingData.data.id, // Amadeus booking ID
+        type: "FLIGHT",
+        verified: true,
+        status: "CONFIRMED",
+        apiResponse: bookingData, // Store full API response
+        bookingDetails: flightOffer, // Store essential flight details
+        totalAmount: flightOffer.price.total,
+        currency: flightOffer.price.currency,
+        apiProvider: "AMADEUS",
+        apiReferenceId: bookingData.data.id,
+        travelers: {
+          create: travelers.map((traveler: any) => ({
+            firstName: traveler.name.firstName,
+            lastName: traveler.name.lastName,
+            dateOfBirth: new Date(traveler.dateOfBirth),
+            gender: traveler.gender,
+            email: traveler.contact.emailAddress,
+            phone: traveler.contact.phones[0].number,
+            countryCode: traveler.documents[0].issuanceCountry,
+            birthPlace: traveler.documents[0].birthPlace,
+            passportNumber: traveler.documents[0].number,
+            passportExpiry: new Date(traveler.documents[0].expiryDate),
+            issuanceCountry: traveler.documents[0].issuanceCountry,
+            validityCountry: traveler.documents[0].validityCountry,
+            nationality: traveler.documents[0].nationality,
+            issuanceDate: new Date(traveler.documents[0].issuanceDate),
+            issuanceLocation: traveler.documents[0].issuanceLocation,
+          })),
+        },
+      },
+    });
 
-        const bookingResponse: any = await axios.post(`${baseURL}/v1/booking/flight-orders`, {
-            data: {
-                flightOffers: [flightOffer],
-                travelers
-            },
-        }, {
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/vnd.amadeus+json" }
-        })
-
-        const apiResponse = bookingResponse.data
-        const apiReferenceId = bookingResponse?.data?.id
-
-
-        // Storing booking in database
-        const booking = await prisma.booking.create({
-            data: {
-                userId,
-                referenceId: `BOOK-${Date.now()}`,
-                type: "FLIGHT",
-                status: "PENDING",
-                apiResponse,
-                bookingDetails: {
-                    origin: flightOffer.itineraries[0].segments[0].departure.iataCode,
-                    destination: flightOffer.itineraries[0].segments[0].arrival.iataCode,
-                    departureDate: flightOffer.itineraries[0].segments[0].departure.at,
-                },
-                apiProvider: "AMADEUS",
-                apiReferenceId
-            }
-        })
-
-        for (const traveler of travelers) {
-            await prisma.traveler.create({
-                data: {
-                    bookingId: booking.id,
-                    firstName: traveler.firstName,
-                    lastName: traveler.lastName,
-                    dateOfBirth: new Date(traveler.dateOfBirth),
-                    gender: traveler.gender,
-                    email: traveler.email,
-                    phone: traveler.phone,
-                    countryCode: traveler.countryCode,
-                    birthPlace: traveler.birthPlace || null,
-                    passportNumber: traveler.passportNumber || null,
-                    passportExpiry: traveler.passportExpiry ? new Date(traveler.passportExpiry) : null,
-                    issuanceCountry: traveler.issuanceCountry || null,
-                    validityCountry: traveler.validityCountry || null,
-                    nationality: traveler.nationality || null,
-                    issuanceDate: traveler.issuanceDate ? new Date(traveler.issuanceDate) : null,
-                    issuanceLocation: traveler.issuanceLocation || null,
-                },
-            })
-        }
-
-        return res.status(200).json({
-            message: "Flight booked successfully",
-            data: booking
-        })
-
-    } catch (error: any) {
-        return res.status(500).json({
-            message: "Error booking flight",
-            data: error?.message
-        })
-    }
-}
-
+    return res
+      .status(200)
+      .json({ message: "Flight booked successfully", booking });
+  } catch (error: any) {
+    console.error(
+      "Amadeus Booking API Error:",
+      error.response?.data || error.message
+    );
+    return res
+      .status(500)
+      .json({ message: "Error booking flight", error: error.message });
+  }
+};

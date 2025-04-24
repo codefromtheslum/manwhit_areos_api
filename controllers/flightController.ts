@@ -1,9 +1,11 @@
-import { Request, request, Response } from "express";
+import { Request, Response } from "express";
 import axios from "axios";
 import getAmadeusToken from "../utils/getToken";
+import { PrismaClient } from "@prisma/client";
 
 const baseURL: string = "https://test.api.amadeus.com";
 
+const prisma = new PrismaClient();
 
 // Search for available flights
 export const searchFlights = async (
@@ -19,16 +21,40 @@ export const searchFlights = async (
       adults,
       travelClass,
       nonStop,
+      keyword, // new param for autocomplete
     } = req.query;
 
+    const token = await getAmadeusToken();
+
+    // If keyword is present, perform autocomplete and return suggestions
+    if (keyword && typeof keyword === "string") {
+      const locationRes: any = await axios.get(
+        `${baseURL}/v1/reference-data/locations`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            subType: "CITY,AIRPORT",
+            keyword,
+          },
+        }
+      );
+
+      const suggestions = locationRes.data.data.map((item: any) => ({
+        name: item.name,
+        iataCode: item.iataCode,
+        cityCode: item.cityCode,
+        countryName: item.address?.countryName,
+      }));
+
+      return res.json(suggestions);
+    }
+
+    // Otherwise, proceed with flight search as before
     if (!originName || !destinationName || !departureDate || !adults) {
       return res
         .status(400)
         .json({ message: "Missing required query parameters" });
     }
-
-    const token = await getAmadeusToken();
-    
 
     // Fetch IATA codes for origin and destination
     const getCode = async (city: string) => {
@@ -73,3 +99,5 @@ export const searchFlights = async (
       .json({ message: "Error searching flights", error: error?.message });
   }
 };
+
+

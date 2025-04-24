@@ -15,18 +15,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchFlights = void 0;
 const axios_1 = __importDefault(require("axios"));
 const getToken_1 = __importDefault(require("../utils/getToken"));
+const client_1 = require("@prisma/client");
 const baseURL = "https://test.api.amadeus.com";
+const prisma = new client_1.PrismaClient();
 // Search for available flights
 const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const { originName, destinationName, departureDate, returnDate, adults, travelClass, nonStop, } = req.query;
+        const { originName, destinationName, departureDate, returnDate, adults, travelClass, nonStop, keyword, // new param for autocomplete
+         } = req.query;
+        const token = yield (0, getToken_1.default)();
+        // If keyword is present, perform autocomplete and return suggestions
+        if (keyword && typeof keyword === "string") {
+            const locationRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/locations`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    subType: "CITY,AIRPORT",
+                    keyword,
+                },
+            });
+            const suggestions = locationRes.data.data.map((item) => {
+                var _a;
+                return ({
+                    name: item.name,
+                    iataCode: item.iataCode,
+                    cityCode: item.cityCode,
+                    countryName: (_a = item.address) === null || _a === void 0 ? void 0 : _a.countryName,
+                });
+            });
+            return res.json(suggestions);
+        }
+        // Otherwise, proceed with flight search as before
         if (!originName || !destinationName || !departureDate || !adults) {
             return res
                 .status(400)
                 .json({ message: "Missing required query parameters" });
         }
-        const token = yield (0, getToken_1.default)();
         // Fetch IATA codes for origin and destination
         const getCode = (city) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b;
@@ -64,3 +88,4 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.searchFlights = searchFlights;
+// Book a flight
