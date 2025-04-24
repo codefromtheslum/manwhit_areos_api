@@ -7,5 +7,4 @@ const express_1 = __importDefault(require("express"));
 const flightController_1 = require("../controllers/flightController");
 const router = express_1.default.Router();
 router.route("/search").get(flightController_1.searchFlights); // Working
-router.route("/search-city").get(flightController_1.searchFlightLocation); // Working
 exports.default = router;

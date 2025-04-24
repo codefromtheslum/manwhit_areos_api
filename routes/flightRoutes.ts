@@ -1,9 +1,7 @@
 import express from "express";
-import { searchFlightLocation, searchFlights } from "../controllers/flightController";
+import { searchFlights } from "../controllers/flightController";
 
 const router = express.Router();
-router.route("/search").get(searchFlights) // Working
-router.route("/search-city").get(searchFlightLocation) // Working
+router.route("/search").get(searchFlights); // Working
 
 export default router;
-
