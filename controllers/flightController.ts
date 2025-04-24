@@ -28,6 +28,7 @@ export const searchFlights = async (
     }
 
     const token = await getAmadeusToken();
+    
 
     // Fetch IATA codes for origin and destination
     const getCode = async (city: string) => {
