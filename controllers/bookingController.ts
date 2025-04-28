@@ -12,6 +12,29 @@ export const verifyFlightPrice = async (
   res: Response
 ): Promise<any> => {
   try {
+    const { priceFlightOffersBody } = req.body;
+
+    if (!priceFlightOffersBody) {
+      return res.status(400).json({ message: "Missing flight offer data" });
+    }
+
+    const token = await getAmadeusToken();
+
+    const response: any = axios.get(
+      `${baseURL}/v1/shopping/flight-offers/pricing`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-HTTP-Method-Override": "GET",
+        },
+      }
+    );
+
+    return res.status(200).json({
+      message: `Flight price verified successfully`,
+      data: response,
+    });
   } catch (error: any) {
     return res.status(500).json({
       message: "Error verifying flight price",
@@ -20,9 +43,88 @@ export const verifyFlightPrice = async (
   }
 };
 
+export const addFlightToCart = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { userId } = req.params;
+    const { flightData } = req.body;
+
+    if (!flightData) {
+      return res.status(400).json({
+        message: `Missing required parameter `,
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: `User not found or does not exist`,
+      });
+    }
+
+    const cartItem = await prisma.flightCart.create({
+      data: {
+        userId,
+        flightData,
+      },
+    });
+
+    return res.status(200).json({
+      message: `Flight added to cart`,
+      data: cartItem,
+    });
+  } catch (error: any) {
+    console.log(`AMADEUS API: `, error?.response?.data);
+    return res.status(500).json({
+      message: `Error occured while adding flight to cart`,
+      data: error?.message,
+    });
+  }
+};
+
+export const removeFlightFromCart = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  const { cartId } = req.params;
+  try {
+    const cartItem = await prisma.flightCart.findUnique({
+      where: { id: cartId },
+    });
+
+    if (!cartItem) {
+      return res.status(404).json({
+        message: `Item not found in cart`,
+      });
+    }
+
+    await prisma.flightCart.delete({
+      where: { id: cartId },
+    });
+
+    return res.status(200).json({
+      message: `Flight removed from cart`,
+    });
+  } catch (error: any) {
+    console.log(`AMADEUS API: `, error?.response?.data);
+    return res.status(500).json({
+      message: `Error occured while removing flight from cart`,
+      data: error?.message,
+    });
+  }
+};
+
 export const bookFlight = async (req: any, res: any): Promise<any> => {
   try {
     const { flightOffer, travelers } = req.body;
+    const { userId } = req.params;
+
+    // console.log("REQ.BODY:", req.body);
 
     if (
       !flightOffer ||
@@ -73,8 +175,7 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
 
     const bookingData: any = bookingResponse.data;
 
-    // Save booking to database using Prisma
-    const userId = req.user?.id; // Assuming you have user authentication middleware
+    console.log("Incoming travelers:", travelers);
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized: User ID missing" });
@@ -89,7 +190,7 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
         status: "CONFIRMED",
         apiResponse: bookingData, // Store full API response
         bookingDetails: flightOffer, // Store essential flight details
-        totalAmount: flightOffer.price.total,
+        totalAmount: parseInt(flightOffer.price.total),
         currency: flightOffer.price.currency,
         apiProvider: "AMADEUS",
         apiReferenceId: bookingData.data.id,

@@ -1,7 +1,9 @@
 import express from "express";
-import { bookFlight } from "../controllers/bookingController";
+import { addFlightToCart, bookFlight, removeFlightFromCart } from "../controllers/bookingController";
 
 const router = express.Router();
-router.route("/book-flight").post(bookFlight);
+router.route("/book-flight/:userId").post(bookFlight);
+router.route("/add-to-cart/:userId").post(addFlightToCart);
+router.route("/remove-from-cart/:cartId").delete(removeFlightFromCart);
 
 export default router;

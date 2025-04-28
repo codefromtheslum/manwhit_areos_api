@@ -4,11 +4,11 @@ import {
   createAccount,
   createNewPassword,
   createPassword,
+  createTraveler,
   getAllAccounts,
   getSingleUserAccount,
   loginAccount,
   resetPassword,
-  // updateTravelerDetails,
   updateuserAccountDetails,
 } from "../controllers/authController";
 
@@ -42,6 +42,6 @@ router.route("/:id/update-details").patch(updateuserAccountDetails);
 
 
 //updating traveler details
-// router.route("/traveler/:travelerId").patch(updateTravelerDetails);
+router.route("/traveler").post(createTraveler);
 
 export default router;

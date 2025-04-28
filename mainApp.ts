@@ -7,6 +7,7 @@ import session from "express-session";
 import "./controllers/passport";
 import googleRoutes from "./routes/googleRoutes";
 import account from "./routes/authRoutes";
+import hotelRoutes from "./routes/hotelRoute";
 import passport from "passport";
 import env from "dotenv";
 env.config();
@@ -38,5 +39,6 @@ export const mainApp = (app: Application) => {
   app.use("/auth", googleRoutes);
   app.use("/flight", flightRoutes);
   app.use("/booking", bookingRoutes);
+  app.use("/hotel", hotelRoutes);
   app.use(morgan("dev"));
 };

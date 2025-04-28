@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bookFlight = exports.verifyFlightPrice = void 0;
+exports.bookFlight = exports.removeFlightFromCart = exports.addFlightToCart = exports.verifyFlightPrice = void 0;
 const client_1 = require("@prisma/client");
 const axios_1 = __importDefault(require("axios"));
 const getToken_1 = __importDefault(require("../utils/getToken"));
@@ -20,6 +20,22 @@ const prisma = new client_1.PrismaClient();
 const baseURL = "https://test.api.amadeus.com";
 const verifyFlightPrice = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const { priceFlightOffersBody } = req.body;
+        if (!priceFlightOffersBody) {
+            return res.status(400).json({ message: "Missing flight offer data" });
+        }
+        const token = yield (0, getToken_1.default)();
+        const response = axios_1.default.get(`${baseURL}/v1/shopping/flight-offers/pricing`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+                "X-HTTP-Method-Override": "GET",
+            },
+        });
+        return res.status(200).json({
+            message: `Flight price verified successfully`,
+            data: response,
+        });
     }
     catch (error) {
         return res.status(500).json({
@@ -29,10 +45,78 @@ const verifyFlightPrice = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.verifyFlightPrice = verifyFlightPrice;
+const addFlightToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { userId } = req.params;
+        const { flightData } = req.body;
+        if (!flightData) {
+            return res.status(400).json({
+                message: `Missing required parameter `,
+            });
+        }
+        const user = yield prisma.user.findUnique({
+            where: { id: userId },
+        });
+        if (!user) {
+            return res.status(404).json({
+                message: `User not found or does not exist`,
+            });
+        }
+        const cartItem = yield prisma.flightCart.create({
+            data: {
+                userId,
+                flightData,
+            },
+        });
+        return res.status(200).json({
+            message: `Flight added to cart`,
+            data: cartItem,
+        });
+    }
+    catch (error) {
+        console.log(`AMADEUS API: `, (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data);
+        return res.status(500).json({
+            message: `Error occured while adding flight to cart`,
+            data: error === null || error === void 0 ? void 0 : error.message,
+        });
+    }
+});
+exports.addFlightToCart = addFlightToCart;
+const removeFlightFromCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { cartId } = req.params;
+    try {
+        const cartItem = yield prisma.flightCart.findUnique({
+            where: { id: cartId },
+        });
+        if (!cartItem) {
+            return res.status(404).json({
+                message: `Item not found in cart`,
+            });
+        }
+        yield prisma.flightCart.delete({
+            where: { id: cartId },
+        });
+        return res.status(200).json({
+            message: `Flight removed from cart`,
+        });
+    }
+    catch (error) {
+        console.log(`AMADEUS API: `, (_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data);
+        return res.status(500).json({
+            message: `Error occured while removing flight from cart`,
+            data: error === null || error === void 0 ? void 0 : error.message,
+        });
+    }
+});
+exports.removeFlightFromCart = removeFlightFromCart;
 const bookFlight = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     try {
         const { flightOffer, travelers } = req.body;
+        const { userId } = req.params;
+        // console.log("REQ.BODY:", req.body);
         if (!flightOffer ||
             !travelers ||
             !Array.isArray(travelers) ||
@@ -71,8 +155,7 @@ const bookFlight = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             },
         });
         const bookingData = bookingResponse.data;
-        // Save booking to database using Prisma
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Assuming you have user authentication middleware
+        console.log("Incoming travelers:", travelers);
         if (!userId) {
             return res.status(401).json({ message: "Unauthorized: User ID missing" });
         }
@@ -85,7 +168,7 @@ const bookFlight = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 status: "CONFIRMED",
                 apiResponse: bookingData, // Store full API response
                 bookingDetails: flightOffer, // Store essential flight details
-                totalAmount: flightOffer.price.total,
+                totalAmount: parseInt(flightOffer.price.total),
                 currency: flightOffer.price.currency,
                 apiProvider: "AMADEUS",
                 apiReferenceId: bookingData.data.id,
@@ -115,7 +198,7 @@ const bookFlight = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             .json({ message: "Flight booked successfully", booking });
     }
     catch (error) {
-        console.error("Amadeus Booking API Error:", ((_b = error.response) === null || _b === void 0 ? void 0 : _b.data) || error.message);
+        console.error("Amadeus Booking API Error:", ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
         return res
             .status(500)
             .json({ message: "Error booking flight", error: error.message });

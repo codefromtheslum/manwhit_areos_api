@@ -9,14 +9,14 @@ datasource db {
 }
 
 model User {
-  id                        String    @id @default(uuid())
-  email                     String    @unique
+  id                        String       @id @default(uuid())
+  email                     String       @unique
   password                  String? // Make password optional for social login users
   firstName                 String?
   lastName                  String?
-  googleId                  String?   @unique // Store Google's unique ID
+  googleId                  String?      @unique // Store Google's unique ID
   avatarUrl                 String? // Profile picture from Google
-  verified                  Boolean   @default(false)
+  verified                  Boolean      @default(false)
   verficationCode           String?
   verificationCodeExpiresIn String?
   recoveryCode              String?
@@ -28,11 +28,12 @@ model User {
   nationality               String?
   passportNo                String?
   passportExpiry            String?
-  role                      Role      @default(USER)
+  role                      Role         @default(USER)
   bookings                  Booking[]
   reviews                   Review[]
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
+  cart                      FlightCart[] // User can have multiple flights in cart
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
 }
 
 enum Role {
@@ -76,6 +77,14 @@ model Review {
   serviceType ServiceType // What part of the service are they rating
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+model FlightCart {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  flightData Json // the selected flightOffer from Amadeus
+  createdAt  DateTime @default(now())
 }
 
 model Traveler {

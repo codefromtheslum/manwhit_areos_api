@@ -25,7 +25,7 @@ const getAmadeusToken = async () => {
         return response.data.access_token;
         
     } catch (error: any) {
-        console.log(`This is the error here: `, error?.message)
+        // console.log(`This is the error here: `, error?.message)
         throw new Error(error?.message || "Failed to authenticate with Amadeus API")
     }
 }

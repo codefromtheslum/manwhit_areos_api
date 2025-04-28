@@ -28,7 +28,7 @@ const getAmadeusToken = () => __awaiter(void 0, void 0, void 0, function* () {
         return response.data.access_token;
     }
     catch (error) {
-        console.log(`This is the error here: `, error === null || error === void 0 ? void 0 : error.message);
+        // console.log(`This is the error here: `, error?.message)
         throw new Error((error === null || error === void 0 ? void 0 : error.message) || "Failed to authenticate with Amadeus API");
     }
 });

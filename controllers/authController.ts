@@ -237,7 +237,12 @@ export const getSingleUserAccount = async (
   try {
     const { id } = req.params;
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        cart: true,
+      },
+    });
 
     if (!user) {
       return res.status(400).json({
@@ -261,7 +266,9 @@ export const getAllAccounts = async (
   res: Response
 ): Promise<any> => {
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      include: { cart: true },
+    });
 
     return res.status(200).json({
       message: `${users?.length} Accounts(s) gotten successfully`,
@@ -330,51 +337,73 @@ export const updateuserAccountDetails = async (
   }
 };
 
+export const createTraveler = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const {
+      bookingId,
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      email,
+      phone,
+      countryCode,
+      birthPlace,
+      passportNumber,
+      passportExpiry,
+      issuanceCountry,
+      validityCountry,
+      nationality,
+      issuanceDate,
+      issuanceLocation,
+    } = req.body;
 
+    // // Validate required fields
+    // if (
+    //   !bookingId ||
+    //   !firstName ||
+    //   !lastName ||
+    //   !dateOfBirth ||
+    //   !gender ||
+    //   !email ||
+    //   !phone
+    // ) {
+    //   return res.status(400).json({ message: "Missing required traveler details" });
+    // }
 
-// export const updateTravelerDetails = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     const { travelerId } = req.params;
-//     const { firstName, lastName, dateOfBirth, gender, email, phone, countryCode, birthPlace, passportNumber, passportExpiry, issuanceCountry, validityCountry, nationality, issuanceDate, issuanceLocation } = req.body;
+    const newTraveler = await prisma.traveler.create({
+      data: {
+        bookingId,
+        firstName,
+        lastName,
+        dateOfBirth: new Date(dateOfBirth),
+        gender,
+        email,
+        phone,
+        countryCode,
+        birthPlace,
+        passportNumber,
+        passportExpiry: passportExpiry ? new Date(passportExpiry) : null,
+        issuanceCountry,
+        validityCountry,
+        nationality,
+        issuanceDate: issuanceDate ? new Date(issuanceDate) : null,
+        issuanceLocation,
+      },
+    });
 
-//     // Validate required fields
-//     if (!firstName || !lastName || !dateOfBirth || !gender || !email || !phone) {
-//       return res.status(400).json({ message: "Missing required traveler details" });
-//     }
-
-//     // Update traveler details in the database using Prisma
-//     const updatedTraveler = await prisma.traveler.update({
-//       where: {
-//         id: travelerId,
-//       },
-//       data: {
-//         firstName,
-//         lastName,
-//         dateOfBirth: new Date(dateOfBirth),
-//         gender,
-//         email,
-//         phone,
-//         countryCode,
-//         birthPlace,
-//         passportNumber,
-//         passportExpiry: passportExpiry ? new Date(passportExpiry) : null,
-//         issuanceCountry,
-//         validityCountry,
-//         nationality,
-//         issuanceDate: issuanceDate ? new Date(issuanceDate) : null,
-//         issuanceLocation,
-//       },
-//     });
-
-//     if (!updatedTraveler) {
-//       return res.status(404).json({ message: "Traveler not found" });
-//     }
-
-//     return res.status(200).json({ message: "Traveler details updated successfully", traveler: updatedTraveler });
-//   } catch (error: any) {
-//     console.error("Error updating traveler details:", error);
-//     return res.status(500).json({ message: "Error updating traveler details", error: error.message });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
+    return res.status(201).json({
+      message: "Traveler created successfully",
+      traveler: newTraveler,
+    });
+  } catch (error: any) {
+    console.error("Error creating traveler:", error);
+    return res.status(500).json({
+      message: "Error creating traveler",
+      error: error.message,
+    });
+  }
+};

@@ -13,6 +13,7 @@ const express_session_1 = __importDefault(require("express-session"));
 require("./controllers/passport");
 const googleRoutes_1 = __importDefault(require("./routes/googleRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const hotelRoute_1 = __importDefault(require("./routes/hotelRoute"));
 const passport_1 = __importDefault(require("passport"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -37,6 +38,7 @@ const mainApp = (app) => {
     app.use("/auth", googleRoutes_1.default);
     app.use("/flight", flightRoutes_1.default);
     app.use("/booking", bookingRoutes_1.default);
+    app.use("/hotel", hotelRoute_1.default);
     app.use((0, morgan_1.default)("dev"));
 };
 exports.mainApp = mainApp;

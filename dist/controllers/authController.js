@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateuserAccountDetails = exports.getAllAccounts = exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
+exports.createTraveler = exports.updateuserAccountDetails = exports.getAllAccounts = exports.getSingleUserAccount = exports.createNewPassword = exports.resetPassword = exports.checkPassword = exports.loginAccount = exports.createPassword = exports.createAccount = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const client_1 = require("@prisma/client");
 const emailServices_1 = require("../config/emailServices");
@@ -215,7 +215,12 @@ const getSingleUserAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
     var _a, _b;
     try {
         const { id } = req.params;
-        const user = yield prisma.user.findUnique({ where: { id } });
+        const user = yield prisma.user.findUnique({
+            where: { id },
+            include: {
+                cart: true,
+            },
+        });
         if (!user) {
             return res.status(400).json({
                 message: `Account does not exist`,
@@ -234,7 +239,9 @@ const getSingleUserAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
 exports.getSingleUserAccount = getSingleUserAccount;
 const getAllAccounts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const users = yield prisma.user.findMany();
+        const users = yield prisma.user.findMany({
+            include: { cart: true },
+        });
         return res.status(200).json({
             message: `${users === null || users === void 0 ? void 0 : users.length} Accounts(s) gotten successfully`,
             data: users,
@@ -287,45 +294,52 @@ const updateuserAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.updateuserAccountDetails = updateuserAccountDetails;
-// export const updateTravelerDetails = async (req: Request, res: Response): Promise<any> => {
-//   try {
-//     const { travelerId } = req.params;
-//     const { firstName, lastName, dateOfBirth, gender, email, phone, countryCode, birthPlace, passportNumber, passportExpiry, issuanceCountry, validityCountry, nationality, issuanceDate, issuanceLocation } = req.body;
-//     // Validate required fields
-//     if (!firstName || !lastName || !dateOfBirth || !gender || !email || !phone) {
-//       return res.status(400).json({ message: "Missing required traveler details" });
-//     }
-//     // Update traveler details in the database using Prisma
-//     const updatedTraveler = await prisma.traveler.update({
-//       where: {
-//         id: travelerId,
-//       },
-//       data: {
-//         firstName,
-//         lastName,
-//         dateOfBirth: new Date(dateOfBirth),
-//         gender,
-//         email,
-//         phone,
-//         countryCode,
-//         birthPlace,
-//         passportNumber,
-//         passportExpiry: passportExpiry ? new Date(passportExpiry) : null,
-//         issuanceCountry,
-//         validityCountry,
-//         nationality,
-//         issuanceDate: issuanceDate ? new Date(issuanceDate) : null,
-//         issuanceLocation,
-//       },
-//     });
-//     if (!updatedTraveler) {
-//       return res.status(404).json({ message: "Traveler not found" });
-//     }
-//     return res.status(200).json({ message: "Traveler details updated successfully", traveler: updatedTraveler });
-//   } catch (error: any) {
-//     console.error("Error updating traveler details:", error);
-//     return res.status(500).json({ message: "Error updating traveler details", error: error.message });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
+const createTraveler = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { bookingId, firstName, lastName, dateOfBirth, gender, email, phone, countryCode, birthPlace, passportNumber, passportExpiry, issuanceCountry, validityCountry, nationality, issuanceDate, issuanceLocation, } = req.body;
+        // // Validate required fields
+        // if (
+        //   !bookingId ||
+        //   !firstName ||
+        //   !lastName ||
+        //   !dateOfBirth ||
+        //   !gender ||
+        //   !email ||
+        //   !phone
+        // ) {
+        //   return res.status(400).json({ message: "Missing required traveler details" });
+        // }
+        const newTraveler = yield prisma.traveler.create({
+            data: {
+                bookingId,
+                firstName,
+                lastName,
+                dateOfBirth: new Date(dateOfBirth),
+                gender,
+                email,
+                phone,
+                countryCode,
+                birthPlace,
+                passportNumber,
+                passportExpiry: passportExpiry ? new Date(passportExpiry) : null,
+                issuanceCountry,
+                validityCountry,
+                nationality,
+                issuanceDate: issuanceDate ? new Date(issuanceDate) : null,
+                issuanceLocation,
+            },
+        });
+        return res.status(201).json({
+            message: "Traveler created successfully",
+            traveler: newTraveler,
+        });
+    }
+    catch (error) {
+        console.error("Error creating traveler:", error);
+        return res.status(500).json({
+            message: "Error creating traveler",
+            error: error.message,
+        });
+    }
+});
+exports.createTraveler = createTraveler;
