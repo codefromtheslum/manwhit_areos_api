@@ -2,6 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import axios from "axios";
 import getAmadeusToken from "../utils/getToken";
+import env from "dotenv";
+env.config();
+
 
 const prisma = new PrismaClient();
 
@@ -119,27 +122,49 @@ export const removeFlightFromCart = async (
   }
 };
 
+
 export const bookFlight = async (req: any, res: any): Promise<any> => {
   try {
-    const { flightOffer, travelers } = req.body;
+    const { flightOffer, travelers, transaction_id } = req.body;
     const { userId } = req.params;
 
-    // console.log("REQ.BODY:", req.body);
-
+    // Validate input
     if (
       !flightOffer ||
       !travelers ||
       !Array.isArray(travelers) ||
-      travelers.length === 0
+      travelers.length === 0 ||
+      !transaction_id
     ) {
-      return res
-        .status(400)
-        .json({ message: "Missing flightOffer or travelers data" });
+      return res.status(400).json({
+        message: "Missing flightOffer, travelers, or transaction_id",
+      });
     }
+
+    // Verify payment with Flutterwave
+    const FLW_SECRET_KEY = process.env.FLUTTER_SECRET!; // Your Flutterwave secret key in env
+    const verifyUrl = `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`;
+
+    const flutterwaveResponse = await axios.get(verifyUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.FLUTTER_SECRET!}`,
+      },
+    });
+
+    const paymentData: any = flutterwaveResponse.data;
+
+    if (
+      !paymentData ||
+      paymentData.status !== "success" ||
+      paymentData.data.status !== "successful"
+    ) {
+      return res.status(402).json({ message: "Payment not successful" });
+    }
+
+    // Payment is successful, proceed with Amadeus booking
 
     const token = await getAmadeusToken();
 
-    // Construct the booking payload
     const payload = {
       data: {
         type: "flight-order",
@@ -161,7 +186,6 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
       },
     };
 
-    // Make the booking request to Amadeus
     const bookingResponse = await axios.post(
       `${baseURL}/v1/booking/flight-orders`,
       payload,
@@ -174,8 +198,6 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
     );
 
     const bookingData: any = bookingResponse.data;
-
-    console.log("Incoming travelers:", travelers);
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized: User ID missing" });
@@ -216,12 +238,15 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
       },
     });
 
+    // Clean up user's cart after booking
+    await prisma.flightCart.deleteMany({ where: { userId } });
+
     return res
       .status(200)
       .json({ message: "Flight booked successfully", booking });
   } catch (error: any) {
     console.error(
-      "Amadeus Booking API Error:",
+      "Booking API Error:",
       error.response?.data || error.message
     );
     return res
@@ -229,3 +254,4 @@ export const bookFlight = async (req: any, res: any): Promise<any> => {
       .json({ message: "Error booking flight", error: error.message });
   }
 };
+
