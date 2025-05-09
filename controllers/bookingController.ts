@@ -5,7 +5,6 @@ import getAmadeusToken from "../utils/getToken";
 import env from "dotenv";
 env.config();
 
-
 const prisma = new PrismaClient();
 
 const baseURL: string = "https://test.api.amadeus.com";
@@ -122,136 +121,655 @@ export const removeFlightFromCart = async (
   }
 };
 
+// export const bookFlight = async (req: any, res: any): Promise<any> => {
+//   try {
+//     const { userId, transactionId } = req.params;
+//     const { travelers} = req.body;
+
+//     if (!userId) {
+//       return res.status(401).json({ message: "Unauthorized: User ID missing" });
+//     }
+
+//     if (!transactionId) {
+//       return res
+//         .status(400)
+//         .json({ message: "Missing Flutterwave transaction ID" });
+//     }
+
+//     if (!travelers || !Array.isArray(travelers) || travelers.length === 0) {
+//       return res
+//         .status(400)
+//         .json({ message: "Travelers data missing or invalid" });
+//     }
+
+//     // 1. Verify payment with Flutterwave
+//     const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTER_SECRET;
+//     const verifyUrl = `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`;
+
+//     const flutterwaveRes = await axios.get(verifyUrl, {
+//       headers: {
+//         Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+//       },
+//     });
+
+//     const flutterwaveData: any = flutterwaveRes.data;
+
+//     if (
+//       !flutterwaveData ||
+//       flutterwaveData.status !== "success" ||
+//       flutterwaveData.data.status !== "successful"
+//     ) {
+//       return res.status(402).json({ message: "Payment not successful" });
+//     }
+
+//     // 2. Fetch user's cart items
+//     const cartItems = await prisma.flightCart.findMany({
+//       where: { userId },
+//     });
+
+//     if (cartItems.length === 0) {
+//       return res.status(400).json({ message: "Cart is empty" });
+//     }
+
+//     const token = await getAmadeusToken();
+
+//     const bookings = [];
+
+//     // 3. For each cart item, create booking
+//     for (const cartItem of cartItems) {
+//       const flightOffer: any = cartItem.flightData;
+
+//       const payload = {
+//         data: {
+//           type: "flight-order",
+//           flightOffers: [flightOffer],
+//           travelers: travelers.map((t: any) => ({
+//             id: t.id,
+//             dateOfBirth: t.dateOfBirth,
+//             name: {
+//               firstName: t.name.firstName,
+//               lastName: t.name.lastName,
+//             },
+//             gender: t.gender,
+//             contact: {
+//               emailAddress: t.contact.emailAddress,
+//               phones: t.contact.phones,
+//             },
+//             documents: t.documents.map((doc: any) => ({
+//               number: doc.passportNumber || doc.number,
+//               documentType: doc.documentType || "PASSPORT",
+//               issuanceCountry: doc.issuanceCountry,
+//               issuanceLocation: doc.issuanceLocation,
+//               issuanceDate: doc.issuanceDate,
+//               holder: true,
+//               expiryDate: doc.expiryDate,
+//               validityCountry: doc.validityCountry,
+//               nationality: doc.nationality,
+//               birthPlace: doc.birthPlace,
+//             })),
+//           })),
+//           holder: {
+//             name: {
+//               firstName: travelers[0].name.firstName,
+//               lastName: travelers[0].name.lastName,
+//             },
+//           },
+//         },
+//       };
+
+//       // Call Amadeus booking API
+//       const bookingResponse = await axios.post(
+//         `${baseURL}/v1/booking/flight-orders`,
+//         payload,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+
+//       const bookingData: any = bookingResponse.data;
+
+//       // Save booking in DB
+//       const booking = await prisma.booking.create({
+//         data: {
+//           userId,
+//           referenceId: bookingData.data.id,
+//           type: "FLIGHT",
+//           verified: true,
+//           status: "CONFIRMED",
+//           apiResponse: bookingData,
+//           bookingDetails: flightOffer,
+//           totalAmount: parseFloat(flightOffer.price.total),
+//           currency: flightOffer?.price?.currency,
+//           apiProvider: "AMADEUS",
+//           apiReferenceId: bookingData.data.id,
+//           travelers: {
+//             create: travelers.map((traveler: any) => ({
+//               firstName: traveler.name.firstName,
+//               lastName: traveler.name.lastName,
+//               dateOfBirth: new Date(traveler.dateOfBirth),
+//               gender: traveler.gender,
+//               email: traveler.contact.emailAddress,
+//               phone: traveler.contact.phones[0].number,
+//               countryCode: traveler.documents[0].issuanceCountry,
+//               birthPlace: traveler.documents[0].birthPlace,
+//               passportNumber: traveler.documents[0].number,
+//               passportExpiry: new Date(traveler.documents[0].expiryDate),
+//               issuanceCountry: traveler.documents[0].issuanceCountry,
+//               validityCountry: traveler.documents[0].validityCountry,
+//               nationality: traveler.documents[0].nationality,
+//               issuanceDate: new Date(traveler.documents[0].issuanceDate),
+//               issuanceLocation: traveler.documents[0].issuanceLocation,
+//             })),
+//           },
+//         },
+//       });
+
+//       bookings.push(booking);
+//     }
+
+//     // 4. Clear cart
+//     await prisma.flightCart.deleteMany({ where: { userId } });
+
+//     return res.status(200).json({
+//       message: "Flight(s) booked successfully",
+//       bookings,
+//     });
+//   } catch (error: any) {
+//     console.error("Booking API Error:", error.response?.data || error.message);
+//     return res
+//       .status(500)
+//       .json({ message: "Error booking flight", error: error.message });
+//   }
+// };
+
+// export const bookFlight = async (req: any, res: any): Promise<any> => {
+//   try {
+//     const { userId, transactionId } = req.params;
+//     const { travelers } = req.body;
+
+//     if (!userId) {
+//       return res.status(401).json({ message: "Unauthorized: User ID missing" });
+//     }
+
+//     if (!transactionId) {
+//       return res.status(400).json({ message: "Missing Flutterwave transaction ID" });
+//     }
+
+//     if (!travelers || !Array.isArray(travelers) || travelers.length === 0) {
+//       return res.status(400).json({ message: "Travelers data missing or invalid" });
+//     }
+
+//     // 1. Verify payment with Flutterwave
+//     const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTER_SECRET;
+//     const verifyUrl = `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`;
+
+//     const flutterwaveRes = await axios.get(verifyUrl, {
+//       headers: {
+//         Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+//       },
+//     });
+
+//     const flutterwaveData: any = flutterwaveRes.data;
+
+//     if (
+//       !flutterwaveData ||
+//       flutterwaveData.status !== "success" ||
+//       flutterwaveData.data.status !== "successful"
+//     ) {
+//       return res.status(402).json({ message: "Payment not successful" });
+//     }
+
+//     // 2. Fetch user's cart items
+//     const cartItems = await prisma.flightCart.findMany({
+//       where: { userId },
+//     });
+
+//     if (cartItems.length === 0) {
+//       return res.status(400).json({ message: "Cart is empty" });
+//     }
+
+//     // 3. Get Amadeus token once
+//     const token = await getAmadeusToken();
+//     console.log("Amadeus token acquired");
+
+//     // Corrected helper function to fetch location details using query parameters
+//     async function getLocationDetails(iataCode: string) {
+//       try {
+//         const response: any = await axios.get(
+//           `${baseURL}/v1/reference-data/locations`,
+//           {
+//             headers: { Authorization: `Bearer ${token}` },
+//             params: {
+//               keyword: iataCode,
+//               subType: "AIRPORT",
+//             },
+//           }
+//         );
+
+//         const locations = response.data.data;
+//         console.log(`Location data for ${iataCode}:`, JSON.stringify(locations, null, 2));
+
+//         if (locations && locations.length > 0) {
+//           // Find exact match by iataCode if multiple returned
+//           const exactMatch = locations.find((loc: any) => loc.iataCode === iataCode);
+//           const location = exactMatch || locations[0];
+//           return location;
+//         } else {
+//           console.warn(`No location data found for IATA code: ${iataCode}`);
+//           return null;
+//         }
+//       } catch (error: any) {
+//         console.error(`Failed to fetch location details for ${iataCode}`, error.response?.data || error.message);
+//         return null;
+//       }
+//     }
+
+//     const bookings = [];
+
+//     for (const cartItem of cartItems) {
+//       const flightOffer: any = cartItem.flightData;
+
+//       // Extract all unique IATA codes from segments
+//       const segments = flightOffer.itineraries.flatMap((i: any) => i.segments);
+//       const uniqueIataCodes = new Set<string>();
+//       segments.forEach((segment: any) => {
+//         uniqueIataCodes.add(segment.departure.iataCode);
+//         uniqueIataCodes.add(segment.arrival.iataCode);
+//       });
+
+//       console.log("Unique IATA codes extracted:", Array.from(uniqueIataCodes));
+
+//       // Fetch location details for each IATA code
+//       const locationDetailsMap: Record<string, any> = {};
+//       for (const code of uniqueIataCodes) {
+//         const details = await getLocationDetails(code);
+//         if (details) {
+//           locationDetailsMap[code] = {
+//             airportName: details.name,
+//             cityName: details.address?.cityName,
+//             countryName: details.address?.countryName,
+//             countryCode: details.address?.countryCode,
+//           };
+//         }
+//       }
+
+//       console.log("Location details map populated:", locationDetailsMap);
+
+//       // Prepare booking payload
+//       const payload = {
+//         data: {
+//           type: "flight-order",
+//           flightOffers: [flightOffer],
+//           travelers: travelers.map((t: any) => ({
+//             id: t.id,
+//             dateOfBirth: t.dateOfBirth,
+//             name: {
+//               firstName: t.name.firstName,
+//               lastName: t.name.lastName,
+//             },
+//             gender: t.gender,
+//             contact: {
+//               emailAddress: t.contact.emailAddress,
+//               phones: t.contact.phones,
+//             },
+//             documents: t.documents.map((doc: any) => ({
+//               number: doc.passportNumber || doc.number,
+//               documentType: doc.documentType || "PASSPORT",
+//               issuanceCountry: doc.issuanceCountry,
+//               issuanceLocation: doc.issuanceLocation,
+//               issuanceDate: doc.issuanceDate,
+//               holder: true,
+//               expiryDate: doc.expiryDate,
+//               validityCountry: doc.validityCountry,
+//               nationality: doc.nationality,
+//               birthPlace: doc.birthPlace,
+//             })),
+//           })),
+//           holder: {
+//             name: {
+//               firstName: travelers[0].name.firstName,
+//               lastName: travelers[0].name.lastName,
+//             },
+//           },
+//         },
+//       };
+
+//       // Call Amadeus booking API
+//       const bookingResponse = await axios.post(
+//         `${baseURL}/v1/booking/flight-orders`,
+//         payload,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//             "Content-Type": "application/json",
+//           },
+//         }
+//       );
+
+//       const bookingData: any = bookingResponse.data;
+
+//       // Save booking in DB, including location details
+//       const booking = await prisma.booking.create({
+//         data: {
+//           userId,
+//           referenceId: bookingData.data.id,
+//           type: "FLIGHT",
+//           verified: true,
+//           status: "CONFIRMED",
+//           apiResponse: bookingData,
+//           bookingDetails: flightOffer,
+//           totalAmount: parseFloat(flightOffer.price.total),
+//           currency: flightOffer?.price?.currency,
+//           apiProvider: "AMADEUS",
+//           apiReferenceId: bookingData.data.id,
+//           locationDetails: locationDetailsMap,
+//           travelers: {
+//             create: travelers.map((traveler: any) => ({
+//               firstName: traveler.name.firstName,
+//               lastName: traveler.name.lastName,
+//               dateOfBirth: new Date(traveler.dateOfBirth),
+//               gender: traveler.gender,
+//               email: traveler.contact.emailAddress,
+//               phone: traveler.contact.phones[0].number,
+//               countryCode: traveler.documents[0].issuanceCountry,
+//               birthPlace: traveler.documents[0].birthPlace,
+//               passportNumber: traveler.documents[0].number,
+//               passportExpiry: new Date(traveler.documents[0].expiryDate),
+//               issuanceCountry: traveler.documents[0].issuanceCountry,
+//               validityCountry: traveler.documents[0].validityCountry,
+//               nationality: traveler.documents[0].nationality,
+//               issuanceDate: new Date(traveler.documents[0].issuanceDate),
+//               issuanceLocation: traveler.documents[0].issuanceLocation,
+//             })),
+//           },
+//         },
+//       });
+
+//       bookings.push(booking);
+//     }
+
+//     // 4. Clear cart
+//     await prisma.flightCart.deleteMany({ where: { userId } });
+
+//     return res.status(200).json({
+//       message: "Flight(s) booked successfully",
+//       bookings,
+//     });
+//   } catch (error: any) {
+//     console.error("Booking API Error:", error.response?.data || error.message);
+//     return res.status(500).json({ message: "Error booking flight", error: error.message });
+//   }
+// };
+
 
 export const bookFlight = async (req: any, res: any): Promise<any> => {
   try {
-    const { flightOffer, travelers, transaction_id } = req.body;
-    const { userId } = req.params;
-
-    // Validate input
-    if (
-      !flightOffer ||
-      !travelers ||
-      !Array.isArray(travelers) ||
-      travelers.length === 0 ||
-      !transaction_id
-    ) {
-      return res.status(400).json({
-        message: "Missing flightOffer, travelers, or transaction_id",
-      });
-    }
-
-    // Verify payment with Flutterwave
-    const FLW_SECRET_KEY = process.env.FLUTTER_SECRET!; // Your Flutterwave secret key in env
-    const verifyUrl = `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`;
-
-    const flutterwaveResponse = await axios.get(verifyUrl, {
-      headers: {
-        Authorization: `Bearer ${process.env.FLUTTER_SECRET!}`,
-      },
-    });
-
-    const paymentData: any = flutterwaveResponse.data;
-
-    if (
-      !paymentData ||
-      paymentData.status !== "success" ||
-      paymentData.data.status !== "successful"
-    ) {
-      return res.status(402).json({ message: "Payment not successful" });
-    }
-
-    // Payment is successful, proceed with Amadeus booking
-
-    const token = await getAmadeusToken();
-
-    const payload = {
-      data: {
-        type: "flight-order",
-        flightOffers: [flightOffer],
-        travelers: travelers.map((t: any) => ({
-          id: t.id,
-          dateOfBirth: t.dateOfBirth,
-          name: {
-            firstName: t.name.firstName,
-            lastName: t.name.lastName,
-          },
-          gender: t.gender,
-          contact: {
-            emailAddress: t.contact.emailAddress,
-            phones: t.contact.phones,
-          },
-          documents: t.documents,
-        })),
-      },
-    };
-
-    const bookingResponse = await axios.post(
-      `${baseURL}/v1/booking/flight-orders`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const bookingData: any = bookingResponse.data;
+    const { userId, transactionId } = req.params;
+    const { travelers } = req.body;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized: User ID missing" });
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        userId: userId,
-        referenceId: bookingData.data.id, // Amadeus booking ID
-        type: "FLIGHT",
-        verified: true,
-        status: "CONFIRMED",
-        apiResponse: bookingData, // Store full API response
-        bookingDetails: flightOffer, // Store essential flight details
-        totalAmount: parseInt(flightOffer.price.total),
-        currency: flightOffer.price.currency,
-        apiProvider: "AMADEUS",
-        apiReferenceId: bookingData.data.id,
-        travelers: {
-          create: travelers.map((traveler: any) => ({
-            firstName: traveler.name.firstName,
-            lastName: traveler.name.lastName,
-            dateOfBirth: new Date(traveler.dateOfBirth),
-            gender: traveler.gender,
-            email: traveler.contact.emailAddress,
-            phone: traveler.contact.phones[0].number,
-            countryCode: traveler.documents[0].issuanceCountry,
-            birthPlace: traveler.documents[0].birthPlace,
-            passportNumber: traveler.documents[0].number,
-            passportExpiry: new Date(traveler.documents[0].expiryDate),
-            issuanceCountry: traveler.documents[0].issuanceCountry,
-            validityCountry: traveler.documents[0].validityCountry,
-            nationality: traveler.documents[0].nationality,
-            issuanceDate: new Date(traveler.documents[0].issuanceDate),
-            issuanceLocation: traveler.documents[0].issuanceLocation,
-          })),
-        },
+    if (!transactionId) {
+      return res.status(400).json({ message: "Missing Flutterwave transaction ID" });
+    }
+
+    if (!travelers || !Array.isArray(travelers) || travelers.length === 0) {
+      return res.status(400).json({ message: "Travelers data missing or invalid" });
+    }
+
+    // 1. Verify payment with Flutterwave
+    const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTER_SECRET;
+    const verifyUrl = `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`;
+
+    const flutterwaveRes = await axios.get(verifyUrl, {
+      headers: {
+        Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
       },
     });
 
-    // Clean up user's cart after booking
+    const flutterwaveData: any = flutterwaveRes.data;
+
+    if (
+      !flutterwaveData ||
+      flutterwaveData.status !== "success" ||
+      flutterwaveData.data.status !== "successful"
+    ) {
+      return res.status(402).json({ message: "Payment not successful" });
+    }
+
+    // 2. Fetch user's cart items
+    const cartItems = await prisma.flightCart.findMany({
+      where: { userId },
+    });
+
+    if (cartItems.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    // 3. Get Amadeus token once
+    const token = await getAmadeusToken();
+    // console.log("Amadeus token acquired");
+
+    // Helper function to fetch location details using query parameters
+    async function getLocationDetails(iataCode: string) {
+      try {
+        const response: any = await axios.get(
+          `${baseURL}/v1/reference-data/locations`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: {
+              keyword: iataCode,
+              subType: "AIRPORT",
+            },
+          }
+        );
+
+        const locations = response.data.data;
+        // console.log(`Location data for ${iataCode}:`, JSON.stringify(locations, null, 2));
+
+        if (locations && locations.length > 0) {
+          // Find exact match by iataCode if multiple returned
+          const exactMatch = locations.find((loc: any) => loc.iataCode === iataCode);
+          const location = exactMatch || locations[0];
+          return location;
+        } else {
+          // console.warn(`No location data found for IATA code: ${iataCode}`);
+          return null;
+        }
+      } catch (error: any) {
+        // console.error(`Failed to fetch location details for ${iataCode}`, error.response?.data || error.message);
+        return null;
+      }
+    }
+
+    // Helper function to fetch airline details dynamically from Amadeus API
+    async function getAirlineDetails(codes: string[], token: string): Promise<Record<string, string>> {
+      try {
+        if (codes.length === 0) return {};
+        const response: any = await axios.get(`${baseURL}/v1/reference-data/airlines`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { airlineCodes: codes.join(",") },
+        });
+
+        const airlines = response.data.data;
+        const map: Record<string, string> = {};
+
+        airlines.forEach((airline: any) => {
+          map[airline.iataCode] = airline.commonName || airline.name || airline.iataCode;
+        });
+
+        return map;
+      } catch (error: any) {
+        console.error("Failed to fetch airline details:", error.response?.data || error.message);
+        // fallback: map codes to themselves if API fails
+        const fallbackMap: Record<string, string> = {};
+        codes.forEach(code => (fallbackMap[code] = code));
+        return fallbackMap;
+      }
+    }
+
+    const bookings = [];
+
+    for (const cartItem of cartItems) {
+      const flightOffer: any = cartItem.flightData;
+
+      // Extract all unique IATA codes from segments
+      const segments = flightOffer.itineraries.flatMap((i: any) => i.segments);
+      const uniqueIataCodes = new Set<string>();
+      segments.forEach((segment: any) => {
+        uniqueIataCodes.add(segment.departure.iataCode);
+        uniqueIataCodes.add(segment.arrival.iataCode);
+      });
+
+      console.log("Unique IATA codes extracted:", Array.from(uniqueIataCodes));
+
+      // Fetch location details for each IATA code
+      const locationDetailsMap: Record<string, any> = {};
+      for (const code of uniqueIataCodes) {
+        const details = await getLocationDetails(code);
+        if (details) {
+          locationDetailsMap[code] = {
+            airportName: details.name,
+            cityName: details.address?.cityName,
+            countryName: details.address?.countryName,
+            countryCode: details.address?.countryCode,
+          };
+        }
+      }
+
+      // console.log("Location details map populated:", locationDetailsMap);
+
+      // Extract unique airline codes from flight segments
+      const uniqueAirlineCodes = new Set<string>();
+      segments.forEach((segment: any) => {
+        if (segment.carrierCode) uniqueAirlineCodes.add(segment.carrierCode);
+        if (segment.operatingCarrierCode) uniqueAirlineCodes.add(segment.operatingCarrierCode);
+      });
+
+      console.log("Unique airline codes extracted:", Array.from(uniqueAirlineCodes));
+
+      // Fetch airline names from Amadeus API dynamically
+      const airlineDetailsMap = await getAirlineDetails(Array.from(uniqueAirlineCodes), token);
+
+      // console.log("Airline details map populated:", airlineDetailsMap);
+
+      // Prepare booking payload
+      const payload = {
+        data: {
+          type: "flight-order",
+          flightOffers: [flightOffer],
+          travelers: travelers.map((t: any) => ({
+            id: t.id,
+            dateOfBirth: t.dateOfBirth,
+            name: {
+              firstName: t.name.firstName,
+              lastName: t.name.lastName,
+            },
+            gender: t.gender,
+            contact: {
+              emailAddress: t.contact.emailAddress,
+              phones: t.contact.phones,
+            },
+            documents: t.documents.map((doc: any) => ({
+              number: doc.passportNumber || doc.number,
+              documentType: doc.documentType || "PASSPORT",
+              issuanceCountry: doc.issuanceCountry,
+              issuanceLocation: doc.issuanceLocation,
+              issuanceDate: doc.issuanceDate,
+              holder: true,
+              expiryDate: doc.expiryDate,
+              validityCountry: doc.validityCountry,
+              nationality: doc.nationality,
+              birthPlace: doc.birthPlace,
+            })),
+          })),
+          holder: {
+            name: {
+              firstName: travelers[0].name.firstName,
+              lastName: travelers[0].name.lastName,
+            },
+          },
+        },
+      };
+
+      // Call Amadeus booking API
+      const bookingResponse = await axios.post(
+        `${baseURL}/v1/booking/flight-orders`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const bookingData: any = bookingResponse.data;
+
+      // Save booking in DB, including location and airline details
+      const booking = await prisma.booking.create({
+        data: {
+          userId,
+          referenceId: bookingData.data.id,
+          type: "FLIGHT",
+          verified: true,
+          status: "CONFIRMED",
+          apiResponse: bookingData,
+          bookingDetails: flightOffer,
+          totalAmount: parseFloat(flightOffer.price.total),
+          currency: flightOffer?.price?.currency,
+          apiProvider: "AMADEUS",
+          apiReferenceId: bookingData.data.id,
+          locationDetails: locationDetailsMap,
+          airlineDetails: airlineDetailsMap, // <-- Automatically fetched airline names here
+          travelers: {
+            create: travelers.map((traveler: any) => ({
+              firstName: traveler.name.firstName,
+              lastName: traveler.name.lastName,
+              dateOfBirth: new Date(traveler.dateOfBirth),
+              gender: traveler.gender,
+              email: traveler.contact.emailAddress,
+              phone: traveler.contact.phones[0].number,
+              countryCode: traveler.documents[0].issuanceCountry,
+              birthPlace: traveler.documents[0].birthPlace,
+              passportNumber: traveler.documents[0].number,
+              passportExpiry: new Date(traveler.documents[0].expiryDate),
+              issuanceCountry: traveler.documents[0].issuanceCountry,
+              validityCountry: traveler.documents[0].validityCountry,
+              nationality: traveler.documents[0].nationality,
+              issuanceDate: new Date(traveler.documents[0].issuanceDate),
+              issuanceLocation: traveler.documents[0].issuanceLocation,
+            })),
+          },
+        },
+      });
+
+      bookings.push(booking);
+    }
+
+    // 4. Clear cart
     await prisma.flightCart.deleteMany({ where: { userId } });
 
-    return res
-      .status(200)
-      .json({ message: "Flight booked successfully", booking });
+    return res.status(200).json({
+      message: "Flight(s) booked successfully",
+      bookings,
+    });
   } catch (error: any) {
-    console.error(
-      "Booking API Error:",
-      error.response?.data || error.message
-    );
-    return res
-      .status(500)
-      .json({ message: "Error booking flight", error: error.message });
+    console.error("Booking API Error:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Error booking flight", error: error.message });
   }
 };
 
+export const searchBookingById = async (req: Request, res: Response): Promise<any> => {
+  try{}catch(error: any){
+    return res.status(500).json({
+      message: `Error occured while searching booking`,
+      data: error?.message || "Error occured"
+    })
+  }
+}

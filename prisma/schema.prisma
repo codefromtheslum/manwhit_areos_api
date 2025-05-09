@@ -59,8 +59,10 @@ model Booking {
   apiReferenceId String? // Reference ID from Amadeus
 
   // Relation to reviews
-  review    Review?
-  travelers Traveler[]
+  review          Review?
+  travelers       Traveler[]
+  locationDetails Json?
+  airlineDetails  Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

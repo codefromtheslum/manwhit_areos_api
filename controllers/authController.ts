@@ -240,7 +240,16 @@ export const getSingleUserAccount = async (
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        cart: true,
+        cart: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        bookings: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
     });
 
@@ -267,7 +276,7 @@ export const getAllAccounts = async (
 ): Promise<any> => {
   try {
     const users = await prisma.user.findMany({
-      include: { cart: true },
+      include: { cart: true, bookings: true },
     });
 
     return res.status(200).json({

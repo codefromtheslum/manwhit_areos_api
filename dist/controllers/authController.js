@@ -218,7 +218,16 @@ const getSingleUserAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const user = yield prisma.user.findUnique({
             where: { id },
             include: {
-                cart: true,
+                cart: {
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                },
+                bookings: {
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                },
             },
         });
         if (!user) {
@@ -240,7 +249,7 @@ exports.getSingleUserAccount = getSingleUserAccount;
 const getAllAccounts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield prisma.user.findMany({
-            include: { cart: true },
+            include: { cart: true, bookings: true },
         });
         return res.status(200).json({
             message: `${users === null || users === void 0 ? void 0 : users.length} Accounts(s) gotten successfully`,

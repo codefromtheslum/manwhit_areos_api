@@ -111,7 +111,7 @@ export const sendVerification = async (user: any) => {
       <!-- Button -->
       <div style="text-align: center">
         <a
-          href="https://manwhitareos.web.app/auth/${user.id}"
+          href="https://manwhiteareos.onrender.com/verify/${user.id}"
           target="_blank"
           style="
             display: inline-block;
@@ -377,8 +377,6 @@ export const sendResetPassword = async (user: any) => {
     throw new Error(error?.response?.data?.message || error.message);
   }
 };
-
-
 
 // export const sendLoginEmail = async (user: any) => {
 //   try {

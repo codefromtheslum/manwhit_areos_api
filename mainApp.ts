@@ -33,6 +33,7 @@ export const mainApp = (app: Application) => {
     })
   );
 
+  app.use(morgan("dev"));
   app.use(passport.initialize());
   app.use(passport.session());
   app.use("/account", account);
@@ -40,5 +41,18 @@ export const mainApp = (app: Application) => {
   app.use("/flight", flightRoutes);
   app.use("/booking", bookingRoutes);
   app.use("/hotel", hotelRoutes);
-  app.use(morgan("dev"));
+
+  app.get("/verify/:userId", (req: Request, res: Response) => {
+    const userAgent = req.headers["user-agent"] || "";
+    const { userId } = req.params;
+
+    const isAndroid = /android/i.test(userAgent);
+    const isIOS = /iphone|ipad|ipod/i.test(userAgent);
+
+    if (isAndroid || isIOS) {
+      res.redirect(`manwhitaroes://completeprofile/${userId}`);
+    } else {
+      res.redirect(`https://manwhitareos.web.app/auth/${userId}`);
+    }
+  });
 };
