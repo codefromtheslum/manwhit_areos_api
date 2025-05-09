@@ -111,7 +111,7 @@ export const sendVerification = async (user: any) => {
       <!-- Button -->
       <div style="text-align: center">
         <a
-          href="https://manwhiteareos.onrender.com/verify/${user.id}"
+          href="https://manwhitareos.onrender.com/verify/${user.id}"
           target="_blank"
           style="
             display: inline-block;
