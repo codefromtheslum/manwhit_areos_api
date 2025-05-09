@@ -91,7 +91,7 @@ const sendVerification = (user) => __awaiter(void 0, void 0, void 0, function* (
           align-items: center;
         "
       >
-        Image Here
+        Image goes Here
       </div>
 
       <!-- Title -->
