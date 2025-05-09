@@ -50,7 +50,7 @@ export const mainApp = (app: Application) => {
     const isIOS = /iphone|ipad|ipod/i.test(userAgent);
 
     if (isAndroid || isIOS) {
-      res.redirect(`manwhitaroes://completeprofile/${userId}`);
+      res.redirect(`manwhitaroes://auth/completeprofile/${userId}`);
     } else {
       res.redirect(`https://manwhitareos.web.app/auth/${userId}`);
     }

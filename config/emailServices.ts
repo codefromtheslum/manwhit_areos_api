@@ -86,7 +86,7 @@ export const sendVerification = async (user: any) => {
           align-items: center;
         "
       >
-        Image goes Here
+        Image Here
       </div>
 
       <!-- Title -->
