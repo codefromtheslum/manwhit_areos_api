@@ -2,6 +2,7 @@ import bcryptjs from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { sendResetPassword, sendVerification } from "../config/emailServices";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -129,7 +130,6 @@ export const checkPassword = async (
 ): Promise<any> => {
   try {
     const { email } = req.params;
-
     const { password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -144,9 +144,19 @@ export const checkPassword = async (
       const check = await bcryptjs.compare(password, user?.password || "");
 
       if (check) {
+        // Generate JWT token
+        const token = jwt.sign(
+          { id: user.id, email: user.email },
+          process.env.JWT as string,
+          { expiresIn: "24h" }
+        );
+
         return res.status(200).json({
           message: `Logged in successfully`,
-          data: user,
+          data: {
+            ...user,
+            token
+          },
         });
       } else {
         return res.status(400).json({

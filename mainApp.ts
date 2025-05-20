@@ -8,6 +8,7 @@ import "./controllers/passport";
 import googleRoutes from "./routes/googleRoutes";
 import account from "./routes/authRoutes";
 import hotelRoutes from "./routes/hotelRoute";
+import paymentRoutes from "./routes/paymentRoutes";
 import passport from "passport";
 import env from "dotenv";
 env.config();
@@ -41,6 +42,7 @@ export const mainApp = (app: Application) => {
   app.use("/flight", flightRoutes);
   app.use("/booking", bookingRoutes);
   app.use("/hotel", hotelRoutes);
+  app.use("/payment", paymentRoutes);
 
   app.get("/verify/:userId", (req: Request, res: Response) => {
     const userAgent = req.headers["user-agent"] || "";

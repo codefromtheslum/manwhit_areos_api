@@ -27,6 +27,7 @@ exports.createTraveler = exports.updateuserAccountDetails = exports.getAllAccoun
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const client_1 = require("@prisma/client");
 const emailServices_1 = require("../config/emailServices");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
 const createAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const generateAuthenticationCode = () => {
@@ -137,9 +138,11 @@ const checkPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (user) {
             const check = yield bcryptjs_1.default.compare(password, (user === null || user === void 0 ? void 0 : user.password) || "");
             if (check) {
+                // Generate JWT token
+                const token = jsonwebtoken_1.default.sign({ id: user.id, email: user.email }, process.env.JWT, { expiresIn: "24h" });
                 return res.status(200).json({
                     message: `Logged in successfully`,
-                    data: user,
+                    data: Object.assign(Object.assign({}, user), { token }),
                 });
             }
             else {

@@ -23,7 +23,7 @@ router.route("/:id/create-password").patch(createPassword);
 router.route("/login").post(loginAccount);
 
 // Authenticating if the password inputed matches the email account's details
-router.route("/:email/validate-pass").post(checkPassword);
+router.route("/:email/check-password").post(checkPassword);
 
 // Reseting the password
 router.route("/reset-password").post(resetPassword);
