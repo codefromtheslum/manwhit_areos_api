@@ -18,7 +18,7 @@ const getToken_1 = __importDefault(require("../utils/getToken"));
 const client_1 = require("@prisma/client");
 const baseURL = "https://test.api.amadeus.com";
 const prisma = new client_1.PrismaClient();
-// Search for available flights
+// Searching available flights
 // export const searchFlights = async (
 //   req: Request,
 //   res: Response
@@ -35,201 +35,14 @@ const prisma = new client_1.PrismaClient();
 //       keyword, // new param for autocomplete
 //     } = req.query;
 //     const token = await getAmadeusToken();
-//     // If keyword is present, perform autocomplete and return suggestions
-//     if (keyword && typeof keyword === "string") {
-//       const locationRes: any = await axios.get(
-//         `${baseURL}/v1/reference-data/locations`,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//           params: {
-//             subType: "CITY,AIRPORT",
-//             keyword,
-//           },
-//         }
-//       );
-//       const suggestions = locationRes.data.data.map((item: any) => ({
-//         name: item.name,
-//         iataCode: item.iataCode,
-//         cityCode: item.cityCode,
-//         countryName: item.address?.countryName,
-//       }));
-//       return res.json(suggestions);
-//     }
-//     // Otherwise, proceed with flight search as before
-//     if (!originName || !destinationName || !departureDate || !adults) {
-//       return res
-//         .status(400)
-//         .json({ message: "Missing required query parameters" });
-//     }
-//     // Fetch IATA codes for origin and destination
-//     const getCode = async (city: string) => {
-//       const locationRes: any = await axios.get(
-//         `${baseURL}/v1/reference-data/locations`,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//           params: {
-//             subType: "CITY,AIRPORT",
-//             keyword: city,
-//           },
-//         }
-//       );
-//       const data = locationRes.data?.data?.[0];
-//       return data?.iataCode || city;
+//     // Helper function to get airline logo URL
+//     const getAirlineLogoUrl = (iataCode: string): string => {
+//       if (!iataCode) return "";
+//       return `https://content.airhex.com/content/logos/airlines_${iataCode.toLowerCase()}_50_50_r.png`;
 //     };
-//     const originLocationCode = await getCode(originName as string);
-//     const destinationLocationCode = await getCode(destinationName as string);
-//     const flightRes = await axios.get(`${baseURL}/v2/shopping/flight-offers`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//       params: {
-//         originLocationCode,
-//         destinationLocationCode,
-//         departureDate,
-//         returnDate,
-//         adults,
-//         travelClass,
-//         nonStop,
-//       },
-//     });
-//     return res.json(flightRes.data);
-//   } catch (error: any) {
-//     console.error(
-//       "Amadeus API Error:",
-//       error?.response?.data || error?.message
-//     );
-//     return res
-//       .status(500)
-//       .json({ message: "Error searching flights", error: error?.message });
-//   }
-// };
-// Search for available flights
-// export const searchFlights = async (
-//   req: Request,
-//   res: Response
-// ): Promise<any> => {
-//   try {
-//     const {
-//       originName,
-//       destinationName,
-//       departureDate,
-//       returnDate,
-//       adults,
-//       travelClass,
-//       nonStop,
-//       keyword, // new param for autocomplete
-//     } = req.query;
-//     const token = await getAmadeusToken();
-//     // Autocomplete: airport/city search
-//     if (keyword && typeof keyword === "string") {
-//       const locationRes: any = await axios.get(
-//         `${baseURL}/v1/reference-data/locations`,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//           params: {
-//             subType: "CITY,AIRPORT",
-//             keyword,
-//           },
-//         }
-//       );
-//       const suggestions = locationRes.data.data.map((item: any) => ({
-//         name: item.name,
-//         iataCode: item.iataCode,
-//         cityCode: item.cityCode,
-//         countryName: item.address?.countryName,
-//       }));
-//       return res.json(suggestions);
-//     }
-//     if (!originName || !destinationName || !departureDate || !adults) {
-//       return res
-//         .status(400)
-//         .json({ message: "Missing required query parameters" });
-//     }
-//     // Helper to get IATA code
-//     const getCode = async (city: string) => {
-//       const locationRes: any = await axios.get(
-//         `${baseURL}/v1/reference-data/locations`,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//           params: {
-//             subType: "CITY,AIRPORT",
-//             keyword: city,
-//           },
-//         }
-//       );
-//       const data = locationRes.data?.data?.[0];
-//       return data?.iataCode || city;
-//     };
-//     const originLocationCode = await getCode(originName as string);
-//     const destinationLocationCode = await getCode(destinationName as string);
-//     const flightRes = await axios.get(`${baseURL}/v2/shopping/flight-offers`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//       params: {
-//         originLocationCode,
-//         destinationLocationCode,
-//         departureDate,
-//         returnDate,
-//         adults,
-//         travelClass,
-//         nonStop,
-//       },
-//     });
-//     const flightData: any = flightRes.data;
-//     // Extract carrier codes
-//     const carrierCodes = [
-//       ...new Set(
-//         flightData.data
-//           .flatMap((offer: any) =>
-//             offer.itineraries.flatMap((it: any) =>
-//               it.segments.map((seg: any) => seg.carrierCode)
-//             )
-//           )
-//       ),
-//     ];
-//     // Lookup airline names
-//     const airlineRes: any = await axios.get(`${baseURL}/v1/reference-data/airlines`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//       params: {
-//         airlineCodes: carrierCodes.join(","),
-//       },
-//     });
-//     const airlines = airlineRes.data.data;
-//     // Map carrierCode to airline name
-//     const airlineMap: Record<string, string> = {};
-//     airlines.forEach((airline: any) => {
-//       airlineMap[airline.iataCode] = airline.commonName || airline.businessName;
-//     });
-//     // Attach airline names to each segment
-//     flightData.data.forEach((offer: any) => {
-//       offer.itineraries.forEach((itinerary: any) => {
-//         itinerary.segments.forEach((segment: any) => {
-//           segment.airlineName = airlineMap[segment.carrierCode] || segment.carrierCode;
-//         });
-//       });
-//     });
-//     return res.json(flightData);
-//   } catch (error: any) {
-//     console.error("Amadeus API Error:", error?.response?.data || error?.message);
-//     return res.status(500).json({
-//       message: "Error searching flights",
-//       error: error?.message,
-//     });
-//   }
-// };
-// export const searchFlights = async (
-//   req: Request,
-//   res: Response
-// ): Promise<any> => {
-//   try {
-//     const {
-//       originName,
-//       destinationName,
-//       departureDate,
-//       returnDate,
-//       adults,
-//       travelClass,
-//       nonStop,
-//       keyword, // new param for autocomplete
-//     } = req.query;
-//     const token = await getAmadeusToken();
+//     // Simple delay helper to throttle requests
+//     const delay = (ms: number) =>
+//       new Promise((resolve) => setTimeout(resolve, ms));
 //     // Autocomplete: airport/city search
 //     if (keyword && typeof keyword === "string") {
 //       const locationRes: any = await axios.get(
@@ -318,10 +131,12 @@ const prisma = new client_1.PrismaClient();
 //       }
 //     );
 //     const airlines = airlineRes.data.data;
-//     // Map carrierCode to airline name
+//     // Map carrierCode to airline name and logo URL
 //     const airlineMap: Record<string, string> = {};
+//     const airlineLogoMap: Record<string, string> = {};
 //     airlines.forEach((airline: any) => {
 //       airlineMap[airline.iataCode] = airline.commonName || airline.businessName;
+//       airlineLogoMap[airline.iataCode] = getAirlineLogoUrl(airline.iataCode);
 //     });
 //     // Get details for all locations in the segments
 //     const locationCodes = new Set<string>();
@@ -342,7 +157,7 @@ const prisma = new client_1.PrismaClient();
 //     if (destinationLocation.iataCode) {
 //       locationMap[destinationLocation.iataCode] = destinationLocation;
 //     }
-//     // Then fetch any remaining locations
+//     // Then fetch any remaining locations with throttling to avoid 429 errors
 //     for (const code of locationCodes) {
 //       // Skip if we already have this location
 //       if (locationMap[code]) continue;
@@ -354,8 +169,6 @@ const prisma = new client_1.PrismaClient();
 //             params: {
 //               subType: "CITY,AIRPORT",
 //               keyword: code,
-//               // Use exact match to get more precise results
-//               // "page[limit]": 10,
 //             },
 //           }
 //         );
@@ -379,14 +192,18 @@ const prisma = new client_1.PrismaClient();
 //         console.error(`Could not fetch details for location code ${code}`, err);
 //         locationMap[code] = { name: code };
 //       }
+//       // Delay 150ms between requests to respect API rate limits
+//       await delay(150);
 //     }
-//     // Attach airline names and location details to each segment
+//     // Attach airline names, logos, and location details to each segment
 //     flightData.data.forEach((offer: any) => {
 //       offer.itineraries.forEach((itinerary: any) => {
 //         itinerary.segments.forEach((segment: any) => {
 //           // Add airline name
 //           segment.airlineName =
 //             airlineMap[segment.carrierCode] || segment.carrierCode;
+//           // Add airline logo URL safely
+//           segment.airlineLogo = airlineLogoMap[segment.carrierCode] || "";
 //           // Add departure location details
 //           segment.departure.locationDetails = locationMap[
 //             segment.departure.iataCode
@@ -417,6 +234,9 @@ const prisma = new client_1.PrismaClient();
 //     });
 //   }
 // };
+// In-memory cache objects
+const locationCache = {};
+const airlineCache = {};
 const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e;
     try {
@@ -429,6 +249,8 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 return "";
             return `https://content.airhex.com/content/logos/airlines_${iataCode.toLowerCase()}_50_50_r.png`;
         };
+        // Simple delay helper to throttle requests
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         // Autocomplete: airport/city search
         if (keyword && typeof keyword === "string") {
             const locationRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/locations`, {
@@ -459,6 +281,9 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Enhanced helper to get IATA code and location details
         const getLocationDetails = (city) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f;
+            if (locationCache[city]) {
+                return locationCache[city]; // Use cached value
+            }
             const locationRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/locations`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: {
@@ -467,7 +292,7 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 },
             });
             const data = (_b = (_a = locationRes.data) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b[0];
-            return {
+            const location = {
                 iataCode: (data === null || data === void 0 ? void 0 : data.iataCode) || city,
                 name: data === null || data === void 0 ? void 0 : data.name,
                 cityName: (_c = data === null || data === void 0 ? void 0 : data.address) === null || _c === void 0 ? void 0 : _c.cityName,
@@ -475,6 +300,8 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 stateCode: (_e = data === null || data === void 0 ? void 0 : data.address) === null || _e === void 0 ? void 0 : _e.stateCode,
                 regionCode: (_f = data === null || data === void 0 ? void 0 : data.address) === null || _f === void 0 ? void 0 : _f.regionCode,
             };
+            locationCache[city] = location; // Cache the result
+            return location;
         });
         // Get details for both origin and destination
         const originLocation = yield getLocationDetails(originName);
@@ -496,20 +323,32 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const carrierCodes = [
             ...new Set(flightData.data.flatMap((offer) => offer.itineraries.flatMap((it) => it.segments.map((seg) => seg.carrierCode)))),
         ];
-        // Lookup airline names
-        const airlineRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/airlines`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: {
-                airlineCodes: carrierCodes.join(","),
-            },
-        });
-        const airlines = airlineRes.data.data;
-        // Map carrierCode to airline name and logo URL
+        // Lookup airline names (with caching)
+        const missingCarrierCodes = carrierCodes.filter((code) => !airlineCache[code]);
+        if (missingCarrierCodes.length > 0) {
+            const airlineRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/airlines`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    airlineCodes: missingCarrierCodes.join(","),
+                },
+            });
+            airlineRes.data.data.forEach((airline) => {
+                airlineCache[airline.iataCode] = airline; // Cache airline details
+            });
+        }
+        // Build airlineMap and airlineLogoMap from cache
         const airlineMap = {};
         const airlineLogoMap = {};
-        airlines.forEach((airline) => {
-            airlineMap[airline.iataCode] = airline.commonName || airline.businessName;
-            airlineLogoMap[airline.iataCode] = getAirlineLogoUrl(airline.iataCode);
+        carrierCodes.forEach((code) => {
+            const airline = airlineCache[code];
+            if (airline) {
+                airlineMap[code] = airline.commonName || airline.businessName;
+                airlineLogoMap[code] = getAirlineLogoUrl(code);
+            }
+            else {
+                airlineMap[code] = code;
+                airlineLogoMap[code] = "";
+            }
         });
         // Get details for all locations in the segments
         const locationCodes = new Set();
@@ -530,11 +369,14 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (destinationLocation.iataCode) {
             locationMap[destinationLocation.iataCode] = destinationLocation;
         }
-        // Then fetch any remaining locations
+        // Then fetch any remaining locations with throttling to avoid 429 errors
         for (const code of locationCodes) {
-            // Skip if we already have this location
             if (locationMap[code])
+                continue; // already fetched
+            if (locationCache[code]) {
+                locationMap[code] = locationCache[code]; // Use cached value
                 continue;
+            }
             try {
                 const locationRes = yield axios_1.default.get(`${baseURL}/v1/reference-data/locations`, {
                     headers: { Authorization: `Bearer ${token}` },
@@ -547,29 +389,35 @@ const searchFlights = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                     locationRes.data.data &&
                     locationRes.data.data.length > 0) {
                     const location = locationRes.data.data[0];
-                    locationMap[code] = {
+                    const locObj = {
                         name: location.name,
                         cityName: (_a = location.address) === null || _a === void 0 ? void 0 : _a.cityName,
                         countryName: (_b = location.address) === null || _b === void 0 ? void 0 : _b.countryName,
                         stateCode: (_c = location.address) === null || _c === void 0 ? void 0 : _c.stateCode,
                         regionCode: (_d = location.address) === null || _d === void 0 ? void 0 : _d.regionCode,
                     };
+                    locationMap[code] = locObj;
+                    locationCache[code] = locObj; // cache it
                 }
                 else {
                     locationMap[code] = { name: code };
+                    locationCache[code] = { name: code }; // cache it
                 }
             }
             catch (err) {
                 console.error(`Could not fetch details for location code ${code}`, err);
                 locationMap[code] = { name: code };
+                locationCache[code] = { name: code }; // cache it
             }
+            yield delay(150); // Delay 150ms between requests to respect API rate limits
         }
         // Attach airline names, logos, and location details to each segment
         flightData.data.forEach((offer) => {
             offer.itineraries.forEach((itinerary) => {
                 itinerary.segments.forEach((segment) => {
                     // Add airline name
-                    segment.airlineName = airlineMap[segment.carrierCode] || segment.carrierCode;
+                    segment.airlineName =
+                        airlineMap[segment.carrierCode] || segment.carrierCode;
                     // Add airline logo URL safely
                     segment.airlineLogo = airlineLogoMap[segment.carrierCode] || "";
                     // Add departure location details

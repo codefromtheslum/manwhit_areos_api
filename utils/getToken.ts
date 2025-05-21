@@ -9,7 +9,7 @@ const api_key = process.env.AMADEUS_API_KEY!
 const api_secret = process.env.AMADEUS_API_SECRET!
 
 
-const getAmadeusToken = async () => {
+const getAmadeusToken: any = async () => {
     try {
         const response: any = await axios.post(
             `${baseURL}/v1/security/oauth2/token`,
