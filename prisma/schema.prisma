@@ -9,14 +9,14 @@ datasource db {
 }
 
 model User {
-  id                        String       @id @default(uuid())
-  email                     String       @unique
+  id                        String        @id @default(uuid())
+  email                     String        @unique
   password                  String? // Make password optional for social login users
   firstName                 String?
   lastName                  String?
-  googleId                  String?      @unique // Store Google's unique ID
+  googleId                  String?       @unique // Store Google's unique ID
   avatarUrl                 String? // Profile picture from Google
-  verified                  Boolean      @default(false)
+  verified                  Boolean       @default(false)
   verficationCode           String?
   verificationCodeExpiresIn String?
   recoveryCode              String?
@@ -28,12 +28,26 @@ model User {
   nationality               String?
   passportNo                String?
   passportExpiry            String?
-  role                      Role         @default(USER)
+  role                      Role          @default(USER)
   bookings                  Booking[]
   reviews                   Review[]
   cart                      FlightCart[] // User can have multiple flights in cart
-  createdAt                 DateTime     @default(now())
-  updatedAt                 DateTime     @updatedAt
+  oneTimeAccessToken        String?
+  oneTimeAccessTokenExpires DateTime?
+  adminToken                String?
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+  AccessToken               AccessToken[]
+}
+
+model AccessToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model GuestUser {
@@ -54,13 +68,14 @@ model GuestUser {
 enum Role {
   USER
   ADMIN
+  AGENT
 }
 
 model Booking {
   id             String      @id @default(uuid())
-  userId         String?     // Make userId optional
+  userId         String? // Make userId optional
   user           User?       @relation(fields: [userId], references: [id])
-  guestUserId    String?     // Add guestUserId field
+  guestUserId    String? // Add guestUserId field
   guestUser      GuestUser?  @relation(fields: [guestUserId], references: [id])
   referenceId    String      @unique // Booking reference for customers
   type           BookingType
